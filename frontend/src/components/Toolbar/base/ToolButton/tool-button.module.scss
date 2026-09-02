@@ -1,0 +1,29 @@
+.tool__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: #f0f4f9;
+  padding: 4px;
+}
+
+.tool__btn:hover:not(:disabled) {
+  background:
+    #444746,
+    8% transparent;
+}
+
+.tool__btn--active {
+  background: #d3e3fd;
+}
+
+.tool__btn--wide {
+  min-width: 58px;
+}
+
+.disabled {
+  opacity: 0.5;
+}

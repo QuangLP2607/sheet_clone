@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="220"
+  height="32"
+  viewBox="0 0 220 32"
+>
+  <g
+    transform="
+      translate(0, 0)
+      scale(1)
+    "
+  >
+    <path d="M73 66L507 124L501 251L56 559L89 634L606 729L620 642L190 567L591 299L600 49L86 -19Z" transform="translate(0.00, 19) scale(0.015, -0.015)" fill="#202124"/>
+    <path d="M132 409L21 399L14 480L132 491L132 689L219 689L219 498L352 510L359 429L219 417L219 66L342 83L349 0L132 -26Z" transform="translate(10.02, 19) scale(0.015, -0.015)" fill="#202124"/>
+    <path d="M71 717L187 717L187 601L71 601ZM85 510L172 510L172 -21L85 -21Z" transform="translate(15.48, 19) scale(0.015, -0.015)" fill="#202124"/>
+    <path d="M71 499L482 527L376 256L292 283L353 439L161 424L179 62L485 110L493 28L95 -29Z" transform="translate(19.35, 19) scale(0.015, -0.015)" fill="#202124"/>
+    <path d="M179 -18L92 -21L73 766L160 769L172 259L396 521L460 461L278 259L509 41L445 -24L173 249Z" transform="translate(27.32, 19) scale(0.015, -0.015)" fill="#202124"/>
+  </g>
+</svg>

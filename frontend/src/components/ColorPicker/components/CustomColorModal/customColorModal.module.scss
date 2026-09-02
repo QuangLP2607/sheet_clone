@@ -1,0 +1,249 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 1000;
+}
+
+.modal {
+  width: 320px;
+  padding: 20px;
+  overflow: hidden;
+
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+
+  box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* =========================
+   COLOR AREA
+========================= */
+
+.colorArea {
+  position: relative;
+
+  width: 100%;
+  height: 180px;
+
+  border-radius: 4px;
+
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+}
+
+.whiteGradient {
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(to right, #fff 0%, rgb(255 255 255 / 0%) 100%);
+
+  pointer-events: none;
+}
+
+.blackGradient {
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(to top, #000 0%, rgb(0 0 0 / 0%) 100%);
+
+  pointer-events: none;
+}
+
+.colorCursor {
+  position: absolute;
+
+  width: 14px;
+  height: 14px;
+
+  transform: translate(-50%, -50%);
+
+  border: 2px solid #fff;
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 0 1px #666,
+    0 1px 3px rgb(0 0 0 / 30%);
+
+  pointer-events: none;
+}
+
+/* =========================
+   HUE SECTION
+========================= */
+
+.section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.colorPreview {
+  flex-shrink: 0;
+
+  width: 32px;
+  height: 32px;
+
+  border: 1px solid #c4c7c5;
+  border-radius: 50%;
+}
+
+/* =========================
+   HUE SLIDER
+========================= */
+
+.hueSlider {
+  position: relative;
+
+  width: 100%;
+  height: 14px;
+
+  border-radius: 7px;
+
+  background: linear-gradient(
+    to right,
+    #ff0000 0%,
+    #ffff00 16.67%,
+    #00ff00 33.33%,
+    #00ffff 50%,
+    #0000ff 66.67%,
+    #ff00ff 83.33%,
+    #ff0000 100%
+  );
+
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.hueCursor {
+  position: absolute;
+  top: 50%;
+
+  width: 16px;
+  height: 16px;
+
+  transform: translate(-50%, -50%);
+
+  border: 2px solid #fff;
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 0 1px #666,
+    0 1px 3px rgb(0 0 0 / 30%);
+
+  pointer-events: none;
+}
+
+/* =========================
+   COLOR VALUE
+========================= */
+
+.colorValue {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.colorInput {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  span {
+    color: #666;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  input {
+    color: #1f1f1f;
+    width: 100%;
+    height: 32px;
+    box-sizing: border-box;
+
+    padding: 0 8px;
+
+    border: 1px solid #ccc;
+    border-radius: 4px;
+
+    outline: none;
+    background: #fff;
+
+    font-size: 13px;
+    font-family: monospace;
+
+    &:focus {
+      border: 2px solid black;
+    }
+  }
+}
+/* Chrome / Edge / Safari */
+
+.colorInput input[type="number"] {
+  appearance: textfield;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+  }
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+.footer {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancelButton,
+.applyButton {
+  height: 32px;
+
+  padding: 0 14px;
+
+  border-radius: 4px;
+
+  font-size: 13px;
+
+  cursor: pointer;
+}
+
+.cancelButton {
+  border: 1px solid #ddd;
+
+  background: #fff;
+  color: #146c2e;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.applyButton {
+  border: 0;
+
+  background: #146c2e;
+  color: #fff;
+
+  &:hover {
+    background: #146c2e;
+  }
+}

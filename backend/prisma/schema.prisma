@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Sheet {
+  id        String   @id @default(cuid())
+  name      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cells     Cell[]
+}
+
+model Cell {
+  id        String   @id @default(cuid())
+
+  sheetId   String
+  sheet     Sheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  row       Int
+  col       Int
+
+  value     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sheetId, row, col])
+  @@index([sheetId])
+}

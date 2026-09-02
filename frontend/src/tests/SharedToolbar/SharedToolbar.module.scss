@@ -1,0 +1,43 @@
+.wrapper {
+  width: 900px;
+  margin: 40px auto;
+}
+
+.sheet {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  width: 100%;
+
+  border-top: 1px solid #dadce0;
+  border-left: 1px solid #dadce0;
+
+  background-color: #fff;
+}
+
+.cell {
+  min-width: 0;
+  height: 80px;
+
+  border-right: 1px solid #dadce0;
+  border-bottom: 1px solid #dadce0;
+
+  background-color: #fff;
+
+  &:focus-within {
+    position: relative;
+
+    z-index: 1;
+
+    outline: 2px solid #1a73e8;
+    outline-offset: -2px;
+  }
+}
+
+.cellEditor {
+  height: 100%;
+}
+
+.cellEditor :global(.ProseMirror) {
+  padding: 8px;
+}
