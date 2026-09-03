@@ -1,13 +1,15 @@
 import { useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
+
 import classNames from "classnames/bind";
 import { Icon } from "@iconify/react";
+
+import Dropdown from "@/components/Dropdown";
 
 import { getContrastColor } from "./utils/colorContrast";
 import COLOR_PALETTE from "./constants/colors";
 import { useEyeDropper } from "./hooks/useEyeDropper";
 import CustomColorModal from "./components/CustomColorModal";
-import { useClickOutside } from "@/hooks/useClickOutside";
 
 import styles from "./colorPicker.module.scss";
 
@@ -19,32 +21,25 @@ interface ColorPickerProps {
   value?: string | null;
   resetColor?: string | null;
   onChange?: (color: string | null) => void;
-  children?: ReactNode;
+  children?: ReactNode | ((props: { open: boolean }) => ReactNode);
 }
 
 interface ColorButtonProps {
   color: string;
-  resetColor: string | null;
   active: boolean;
   onClick: () => void;
 }
 
-/**
- * Không cho button lấy focus khỏi RichTextEditor.
- * Selection/caret vẫn được giữ nguyên.
- */
 const preventEditorBlur = (event: MouseEvent<HTMLButtonElement>) => {
   event.preventDefault();
 };
 
-function ColorButton({ color, resetColor, active, onClick }: ColorButtonProps) {
-  const isResetColor = color === resetColor;
-
+function ColorButton({ color, active, onClick }: ColorButtonProps) {
   return (
     <button
       type="button"
       className={cx("color-picker__color", {
-        "color-picker__color--active": active || isResetColor,
+        "color-picker__color--active": active,
       })}
       style={{
         backgroundColor: color,
@@ -53,7 +48,7 @@ function ColorButton({ color, resetColor, active, onClick }: ColorButtonProps) {
       onMouseDown={preventEditorBlur}
       onClick={onClick}
     >
-      {(active || isResetColor) && (
+      {active && (
         <Icon
           icon="mdi:check"
           className={cx("color-picker__check")}
@@ -74,14 +69,8 @@ export default function ColorPicker({
 }: ColorPickerProps) {
   const { pickColor } = useEyeDropper();
 
-  const [open, setOpen] = useState(false);
   const [showCustomColor, setShowCustomColor] = useState(false);
   const [recentColors, setRecentColors] = useState<string[]>([]);
-
-  const colorPickerRef = useClickOutside<HTMLDivElement>(() => {
-    setOpen(false);
-    setShowCustomColor(false);
-  });
 
   const addRecentColor = (color: string) => {
     setRecentColors((prev) =>
@@ -92,84 +81,91 @@ export default function ColorPicker({
     );
   };
 
-  const closePicker = () => {
-    setOpen(false);
-    setShowCustomColor(false);
-  };
-
-  const selectColor = (color: string | null) => {
+  const selectColor = (color: string | null, close: () => void) => {
     onChange?.(color);
-    closePicker();
+    setShowCustomColor(false);
+    close();
   };
 
-  const selectCustomColor = (color: string) => {
+  const selectCustomColor = (color: string, close: () => void) => {
     addRecentColor(color);
-    selectColor(color);
+    selectColor(color, close);
   };
 
-  const handlePickColor = async () => {
+  const handlePickColor = async (close: () => void) => {
     try {
       const color = await pickColor();
 
       if (color) {
-        selectCustomColor(color);
+        selectCustomColor(color, close);
       }
     } catch {
       // User cancelled EyeDropper or browser does not support it.
     }
   };
 
-  const handleToggleOpen = () => {
-    setOpen((prev) => !prev);
-    setShowCustomColor(false);
-  };
-
-  const handleOpenCustomColor = () => {
-    setShowCustomColor(true);
-  };
-
   return (
-    <div ref={colorPickerRef} className={cx("color-picker")}>
-      {/* Trigger */}
-      {children ? (
-        <div
-          className={cx("color-picker__trigger")}
-          onMouseDown={(event) => {
-            event.preventDefault();
-          }}
-          onClick={handleToggleOpen}
-        >
-          {children}
-        </div>
-      ) : (
-        <button
-          type="button"
-          className={cx("color-picker__trigger-button")}
-          style={{
-            backgroundColor: value ?? "transparent",
-          }}
-          aria-label="Choose text color"
-          onMouseDown={preventEditorBlur}
-          onClick={handleToggleOpen}
-        >
-          <Icon
-            icon="mdi:format-color-fill"
-            width={16}
-            height={16}
-            color={value ? getContrastColor(value) : undefined}
-          />
-        </button>
-      )}
+    <Dropdown
+      trigger={({ toggle, open }) => {
+        if (typeof children === "function") {
+          return (
+            <div
+              className={cx("color-picker__trigger")}
+              onMouseDown={(event) => {
+                event.preventDefault();
+              }}
+              onClick={toggle}
+            >
+              {children({ open })}
+            </div>
+          );
+        }
 
-      {/* Color Picker */}
-      {open && (
+        if (children) {
+          return (
+            <div
+              className={cx("color-picker__trigger")}
+              onMouseDown={(event) => {
+                event.preventDefault();
+              }}
+              onClick={toggle}
+            >
+              {children}
+            </div>
+          );
+        }
+
+        return (
+          <button
+            type="button"
+            className={cx("color-picker__trigger-button")}
+            style={{
+              backgroundColor: value ?? "transparent",
+            }}
+            aria-label="Choose color"
+            onMouseDown={preventEditorBlur}
+            onClick={toggle}
+          >
+            <Icon
+              icon="mdi:format-color-fill"
+              width={16}
+              height={16}
+              color={value ? getContrastColor(value) : undefined}
+            />
+          </button>
+        );
+      }}
+    >
+      {({ close }) => (
         <div className={cx("color-picker__popover")}>
           {/* Reset */}
           <button
             type="button"
-            className={cx("color-picker__reset")}
+            className={cx("color-picker__reset", {
+              "color-picker__reset--active": value === resetColor,
+            })}
             onMouseDown={preventEditorBlur}
-            onClick={() => selectColor(resetColor)}
+            onClick={() => selectColor(resetColor, close)}
           >
             <Icon icon="fa7-solid:tint-slash" />
             <span>Reset</span>
@@ -181,9 +177,8 @@ export default function ColorPicker({
               <ColorButton
                 key={color}
                 color={color}
-                resetColor={resetColor}
                 active={value === color}
-                onClick={() => selectColor(color)}
+                onClick={() => selectColor(color, close)}
               />
             ))}
           </div>
@@ -196,7 +191,7 @@ export default function ColorPicker({
               type="button"
               className={cx("color-picker__custom-label")}
               onMouseDown={preventEditorBlur}
-              onClick={handleOpenCustomColor}
+              onClick={() => setShowCustomColor(true)}
             >
               Custom
             </button>
@@ -207,9 +202,8 @@ export default function ColorPicker({
                 <ColorButton
                   key={color}
                   color={color}
-                  resetColor={resetColor}
                   active={value === color}
-                  onClick={() => selectColor(color)}
+                  onClick={() => selectColor(color, close)}
                 />
               ))}
 
@@ -219,7 +213,7 @@ export default function ColorPicker({
                 className={cx("color-picker__action")}
                 aria-label="Choose custom color"
                 onMouseDown={preventEditorBlur}
-                onClick={handleOpenCustomColor}
+                onClick={() => setShowCustomColor(true)}
               >
                 <Icon
                   icon="gg:add"
@@ -233,7 +227,7 @@ export default function ColorPicker({
                 className={cx("color-picker__action")}
                 aria-label="Pick color from screen"
                 onMouseDown={preventEditorBlur}
-                onClick={handlePickColor}
+                onClick={() => handlePickColor(close)}
               >
                 <Icon
                   icon="mingcute:color-picker-line"
@@ -248,11 +242,11 @@ export default function ColorPicker({
             <CustomColorModal
               value={value}
               onClose={() => setShowCustomColor(false)}
-              onChange={selectCustomColor}
+              onChange={(color) => selectCustomColor(color, close)}
             />
           )}
         </div>
       )}
-    </div>
+    </Dropdown>
   );
 }

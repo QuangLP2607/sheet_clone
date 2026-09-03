@@ -1,0 +1,16 @@
+.text-wrapping {
+  &__arrow {
+    font-size: 16px;
+    transition: transform 0.15s ease;
+  }
+
+  &__arrow--open {
+    transform: rotate(180deg);
+  }
+
+  &__dropdown {
+    display: flex;
+    gap: 1px;
+    padding: 4px;
+  }
+}

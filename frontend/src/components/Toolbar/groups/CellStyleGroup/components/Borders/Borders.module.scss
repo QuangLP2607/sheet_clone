@@ -1,0 +1,103 @@
+.borders {
+  &__arrow {
+    font-size: 16px;
+    transition: transform 0.15s ease;
+  }
+
+  &__arrow--open {
+    transform: rotate(180deg);
+  }
+
+  &__dropdown {
+    display: flex;
+    align-items: stretch;
+    width: max-content;
+    padding: 4px;
+  }
+
+  &__options {
+    display: grid;
+    grid-template-columns: repeat(5, 32px);
+    gap: 1px;
+    padding-right: 4px;
+    border-right: 1px solid #e9e9e9;
+  }
+
+  &__settings {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding-left: 4px;
+  }
+
+  /*
+   * Border color
+   */
+  &__color {
+    position: relative;
+    display: inline-flex;
+  }
+
+  &__color-preview {
+    position: absolute;
+    right: 1px;
+    bottom: 0;
+
+    width: 14px;
+    height: 3px;
+
+    border-radius: 1px;
+  }
+
+  /*
+   * Border style
+   */
+  &__style-preview {
+    display: block;
+
+    width: 14px;
+    height: 0;
+
+    border-top: 2px solid currentColor;
+
+    &--solid {
+      border-top-style: solid;
+    }
+
+    &--dashed {
+      border-top-style: dashed;
+    }
+
+    &--dotted {
+      border-top-style: dotted;
+    }
+
+    &--double {
+      border-top-width: 3px;
+      border-top-style: double;
+    }
+  }
+
+  /*
+   * Border style dropdown
+   */
+  &__style-dropdown {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1px;
+
+    min-width: 48px;
+    padding: 4px;
+  }
+
+  &__style-option {
+    justify-content: center;
+
+    .borders__style-preview {
+      width: 28px;
+    }
+  }
+}

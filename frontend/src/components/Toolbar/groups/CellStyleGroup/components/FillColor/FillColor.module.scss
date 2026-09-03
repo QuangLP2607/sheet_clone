@@ -1,0 +1,11 @@
+.fill-color {
+  &__button {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__indicator {
+    width: 100%;
+    height: 3px;
+  }
+}

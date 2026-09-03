@@ -4,16 +4,5 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  padding: 8px;
-
-  &::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    top: 50%;
-    width: 1px;
-    height: 20px;
-    background-color: #c4c7c5;
-    transform: translateY(-50%);
-  }
+  padding: 4px 8px;
 }

@@ -1,6 +1,4 @@
 .font-picker {
-  position: relative;
-
   &__trigger {
     display: flex;
     align-items: center;
@@ -51,36 +49,29 @@
   }
 
   &__popover {
-    position: absolute;
-
-    top: calc(100% + 4px);
-    left: 0;
-
-    z-index: 1000;
-
     display: flex;
     flex-direction: column;
 
     width: 280px;
 
-    max-height: calc(100vh - 100px);
+    padding: 4px 1px;
 
-    padding: 4px 0;
+    box-sizing: border-box;
 
+    /*
+     * Không cho Dropdown bên ngoài scroll toàn bộ.
+     * Recent + divider giữ cố định,
+     * chỉ __list được scroll.
+     */
     overflow: hidden;
-
-    border: 1px solid #dadce0;
-    border-radius: 4px;
-
-    background: #fff;
-
-    box-shadow: 0 2px 6px rgb(0 0 0 / 20%);
   }
 
   &__section {
     flex-shrink: 0;
 
     padding: 4px 0;
+
+    box-sizing: border-box;
   }
 
   &__section-title {
@@ -111,8 +102,15 @@
 
     min-height: 0;
 
+    /*
+     * Giới hạn riêng danh sách font.
+     */
+    max-height: 320px;
+
     overflow-x: hidden;
     overflow-y: auto;
+
+    box-sizing: border-box;
   }
 
   &__option {
@@ -127,6 +125,8 @@
     padding: 4px 12px 4px 32px;
 
     border: 0;
+
+    box-sizing: border-box;
 
     background: transparent;
 
@@ -146,6 +146,7 @@
 
     &:disabled {
       opacity: 0.6;
+
       cursor: wait;
     }
   }

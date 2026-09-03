@@ -4,24 +4,27 @@ import { Icon } from "@iconify/react";
 import ToolbarButton from "../../../../base/ToolButton";
 import ColorPicker from "@/components/ColorPicker";
 
-import styles from "./TextColor.module.scss";
+import styles from "./FillColor.module.scss";
 
 const cx = classNames.bind(styles);
 
-interface TextColorProps {
+interface FillColorProps {
   color: string | null;
   setColor: (color: string | null) => void;
 }
 
-export default function TextColor({ color, setColor }: TextColorProps) {
+export default function FillColor({ color, setColor }: FillColorProps) {
   return (
-    <ColorPicker value={color} resetColor="#000000" onChange={setColor}>
+    <ColorPicker value={color} resetColor="#ffffff" onChange={setColor}>
       {({ open }) => (
-        <ToolbarButton className={cx("text-color__button")} open={open}>
-          <Icon className={cx("text-color__icon")} icon="fa7-solid:a" />
+        <ToolbarButton className={cx("fill-color__button")} open={open}>
+          <Icon
+            className={cx("fill-color__icon")}
+            icon="mdi:format-color-fill"
+          />
 
           <span
-            className={cx("text-color__indicator")}
+            className={cx("fill-color__indicator")}
             style={{
               backgroundColor: color ?? "transparent",
             }}

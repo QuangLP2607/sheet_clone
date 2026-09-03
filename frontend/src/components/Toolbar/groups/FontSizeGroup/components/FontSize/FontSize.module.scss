@@ -1,6 +1,4 @@
 .font-size {
-  position: relative;
-
   &__control {
     display: flex;
     align-items: center;
@@ -41,6 +39,7 @@
 
   &__input {
     width: 36px;
+    height: 28px;
 
     padding: 4px;
 
@@ -53,6 +52,7 @@
     text-align: center;
 
     appearance: textfield;
+    box-sizing: border-box;
 
     &:focus {
       border: 2px solid #0b57d0;
@@ -66,36 +66,30 @@
   }
 
   &__popover {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 50%;
-
-    z-index: 1000;
-
     display: flex;
     flex-direction: column;
 
     width: 40px;
-    max-height: calc(100vh - 100px);
+    // max-height: calc(100vh - 100px);
 
-    padding: 4px 0;
+    padding: 4px 1px;
     overflow-y: auto;
 
-    transform: translateX(-50%);
-
-    border: 1px solid #dadce0;
-    border-radius: 4px;
-
-    background: #fff;
-    box-shadow: 0 2px 6px rgb(0 0 0 / 20%);
+    box-sizing: border-box;
   }
 
   &__option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
     width: 100%;
-    height: 28px;
+    min-height: 28px;
 
     padding: 4px 8px;
     border: 0;
+
+    box-sizing: border-box;
 
     background: transparent;
 
@@ -108,6 +102,10 @@
 
     &--active {
       background: #e8f0fe;
+
+      &:hover {
+        background: #e8f0fe;
+      }
     }
   }
 }

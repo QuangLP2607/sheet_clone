@@ -1,0 +1,46 @@
+.merge-cells {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+
+  &__button {
+    border-radius: 4px 0 0 4px;
+  }
+
+  &__dropdown-button {
+    width: 20px;
+    min-width: 20px;
+    padding: 0;
+    border-radius: 0 4px 4px 0;
+  }
+
+  &__arrow {
+    font-size: 14px;
+    transition: transform 0.15s ease;
+  }
+
+  &__arrow--open {
+    transform: rotate(180deg);
+  }
+
+  &__menu {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 180px;
+    padding: 4px;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 6px 8px;
+
+    span {
+      font-size: 13px;
+      white-space: nowrap;
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { forwardRef, type ButtonHTMLAttributes } from "react";
 import classNames from "classnames/bind";
 
 import styles from "./tool-button.module.scss";
@@ -7,16 +7,14 @@ const cx = classNames.bind(styles);
 
 interface ToolbarButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;
-  wide?: boolean;
-  children?: ReactNode;
+  open?: boolean;
 }
 
 const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
   function ToolbarButton(
     {
       active = false,
-      wide = false,
-      children,
+      open = false,
       className,
       type = "button",
       onMouseDown,
@@ -31,7 +29,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
           "tool__btn",
           {
             "tool__btn--active": active,
-            "tool__btn--wide": wide,
+            "tool__btn--open": open,
           },
           className,
         )}
@@ -42,7 +40,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
           onMouseDown?.(event);
         }}
       >
-        {children}
+        {props.children}
       </button>
     );
   },

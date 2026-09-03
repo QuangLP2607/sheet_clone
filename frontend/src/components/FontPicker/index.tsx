@@ -6,7 +6,7 @@ import classNames from "classnames/bind";
 
 import { Icon } from "@iconify/react";
 
-import { useClickOutside } from "@/hooks/useClickOutside";
+import Dropdown from "@/components/Dropdown";
 
 import { FONT_FAMILIES } from "./constants";
 import { useLoadFont } from "./hooks/useLoadFont";
@@ -25,6 +25,7 @@ interface FontPickerProps {
 }
 
 const MAX_RECENT_FONTS = 5;
+
 const RECENT_FONTS_KEY = "rich-text-editor-recent-fonts";
 
 const preventEditorBlur = (event: MouseEvent<HTMLButtonElement>) => {
@@ -44,7 +45,7 @@ const getFontSlug = (fontFamily: string): string => {
 };
 
 const getPreviewUrl = (fontFamily: string): string => {
-  return `/fonts/${getFontSlug(fontFamily)}.svg`;
+  return `${import.meta.env.BASE_URL}fonts/${getFontSlug(fontFamily)}.svg`;
 };
 
 const getRecentFonts = (defaultFont: string): string[] => {
@@ -76,42 +77,27 @@ const getRecentFonts = (defaultFont: string): string[] => {
 };
 
 export default function FontPicker({ value, onChange }: FontPickerProps) {
-  const [open, setOpen] = useState(false);
-
   const [recentFonts, setRecentFonts] = useState<string[]>(() =>
     getRecentFonts(value),
   );
 
   const [loadingFont, setLoadingFont] = useState<string | null>(null);
 
-  const containerRef = useClickOutside<HTMLDivElement>(() => setOpen(false));
-
   const { loadFont } = useLoadFont();
 
-  /**
-   * Persist recent fonts.
-   *
-   * Không update recentFonts bằng effect.
-   * Việc chọn font được xử lý trực tiếp
-   * trong handleSelect.
-   */
   useEffect(() => {
     localStorage.setItem(RECENT_FONTS_KEY, JSON.stringify(recentFonts));
   }, [recentFonts]);
 
-  const handleToggle = () => {
-    setOpen((previous) => !previous);
-  };
-
-  const handleSelect = async (fontFamily: string) => {
+  const handleSelect = async (fontFamily: string, close: () => void) => {
     if (fontFamily === value) {
-      setOpen(false);
+      close();
       return;
     }
 
     const font = (metadata as FontMetadataMap)[fontFamily];
 
-    /**
+    /*
      * Google Font:
      * load actual font lazily.
      *
@@ -142,12 +128,14 @@ export default function FontPicker({ value, onChange }: FontPickerProps) {
       ),
     );
 
-    setOpen(false);
+    close();
   };
 
-  const renderFontOption = (fontFamily: string) => {
+  const renderFontOption = (fontFamily: string, close: () => void) => {
     const active = fontFamily === value;
+
     const loading = loadingFont === fontFamily;
+
     const isGoogleFont = Boolean((metadata as FontMetadataMap)[fontFamily]);
 
     return (
@@ -158,7 +146,7 @@ export default function FontPicker({ value, onChange }: FontPickerProps) {
           "font-picker__option--active": active,
         })}
         onMouseDown={preventEditorBlur}
-        onClick={() => handleSelect(fontFamily)}
+        onClick={() => handleSelect(fontFamily, close)}
         disabled={loading}
       >
         <span className={cx("font-picker__preview")}>
@@ -186,47 +174,53 @@ export default function FontPicker({ value, onChange }: FontPickerProps) {
   };
 
   return (
-    <div ref={containerRef} className={cx("font-picker")}>
-      <button
-        type="button"
-        className={cx("font-picker__trigger", {
-          "font-picker__trigger--active": open,
-        })}
-        onMouseDown={preventEditorBlur}
-        onClick={handleToggle}
-      >
-        <span
-          className={cx("font-picker__value")}
-          style={{
-            fontFamily: value,
-          }}
-        >
-          {value}
-        </span>
-
-        <Icon
-          icon="material-symbols:keyboard-arrow-down"
-          className={cx("font-picker__arrow", {
-            "font-picker__arrow--active": open,
+    <Dropdown
+      trigger={({ open, toggle }) => (
+        <button
+          type="button"
+          className={cx("font-picker__trigger", {
+            "font-picker__trigger--active": open,
           })}
-        />
-      </button>
+          onMouseDown={preventEditorBlur}
+          onClick={toggle}
+        >
+          <span
+            className={cx("font-picker__value")}
+            style={{
+              fontFamily: value,
+            }}
+          >
+            {value}
+          </span>
 
-      {open && (
+          <Icon
+            icon="material-symbols:arrow-drop-down-rounded"
+            className={cx("font-picker__arrow", {
+              "font-picker__arrow--active": open,
+            })}
+          />
+        </button>
+      )}
+    >
+      {({ close }) => (
         <div className={cx("font-picker__popover")}>
           <section className={cx("font-picker__section")}>
             <span className={cx("font-picker__section-title")}>Recent</span>
 
-            {recentFonts.map(renderFontOption)}
+            {recentFonts.map((fontFamily) =>
+              renderFontOption(fontFamily, close),
+            )}
           </section>
 
           <div className={cx("font-picker__divider")} />
 
           <div className={cx("font-picker__list")}>
-            {FONT_FAMILIES.map(renderFontOption)}
+            {FONT_FAMILIES.map((fontFamily) =>
+              renderFontOption(fontFamily, close),
+            )}
           </div>
         </div>
       )}
-    </div>
+    </Dropdown>
   );
 }

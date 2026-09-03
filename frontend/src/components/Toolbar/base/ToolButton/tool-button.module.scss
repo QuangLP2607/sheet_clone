@@ -8,20 +8,18 @@
   border-radius: 4px;
   background: #f0f4f9;
   padding: 4px;
-}
 
-.tool__btn:hover:not(:disabled) {
-  background:
-    #444746,
-    8% transparent;
-}
+  &:hover:not(:disabled) {
+    background: #444746 8% transparent;
+  }
 
-.tool__btn--active {
-  background: #d3e3fd;
-}
+  &--active {
+    background: #d3e3fd;
+  }
 
-.tool__btn--wide {
-  min-width: 58px;
+  &--open {
+    background: #dfdfdf;
+  }
 }
 
 .disabled {

@@ -1,9 +1,15 @@
-import { useCallback, useState } from "react";
-import type { ChangeEvent, MouseEvent } from "react";
+import {
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
+
 import classNames from "classnames/bind";
+
 import { Icon } from "@iconify/react";
 
-import { useClickOutside } from "@/hooks/useClickOutside";
+import Dropdown from "@/components/Dropdown";
 
 import styles from "./FontSize.module.scss";
 
@@ -24,94 +30,113 @@ const preventEditorBlur = (event: MouseEvent<HTMLButtonElement>) => {
 };
 
 export default function FontSize({ value, onChange }: FontSizeProps) {
-  const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(String(value));
 
-  const closeDropdown = useCallback(() => {
-    setOpen(false);
-  }, []);
+  const applyFontSize = (size: number) => {
+    const nextSize = Math.min(Math.max(size, MIN_FONT_SIZE), MAX_FONT_SIZE);
 
-  const fontSizeRef = useClickOutside<HTMLDivElement>(closeDropdown);
-
-  const handleInputFocus = () => {
-    setOpen(true);
+    setInputValue(String(nextSize));
+    onChange(nextSize);
   };
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const size = Number(event.target.value);
-
-    if (!Number.isFinite(size)) {
-      return;
-    }
-
-    if (size < MIN_FONT_SIZE) {
-      return;
-    }
-
-    onChange(Math.min(size, MAX_FONT_SIZE));
+    setInputValue(event.target.value);
   };
 
-  const handleSelect = (size: number) => {
-    onChange(size);
-    setOpen(false);
+  const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      setInputValue(String(value));
+      event.currentTarget.blur();
+      return;
+    }
+
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    const size = Number(inputValue);
+
+    if (!Number.isFinite(size)) {
+      setInputValue(String(value));
+      return;
+    }
+
+    applyFontSize(size);
+    event.currentTarget.blur();
   };
 
   const handleDecrease = () => {
-    const size = Math.max(MIN_FONT_SIZE, value - 1);
-
-    if (size !== value) {
-      onChange(size);
+    if (value <= MIN_FONT_SIZE) {
+      return;
     }
+
+    applyFontSize(value - 1);
   };
 
   const handleIncrease = () => {
-    const size = Math.min(MAX_FONT_SIZE, value + 1);
-
-    if (size !== value) {
-      onChange(size);
+    if (value >= MAX_FONT_SIZE) {
+      return;
     }
+
+    applyFontSize(value + 1);
+  };
+
+  const handleSelect = (size: number, close: () => void) => {
+    applyFontSize(size);
+    close();
   };
 
   return (
-    <div ref={fontSizeRef} className={cx("font-size")}>
-      <div className={cx("font-size__control")}>
-        <button
-          type="button"
-          className={cx("font-size__button")}
-          aria-label="Decrease font size"
-          disabled={value <= MIN_FONT_SIZE}
-          onMouseDown={preventEditorBlur}
-          onClick={handleDecrease}
-        >
-          <Icon icon="mdi:minus" />
-        </button>
+    <Dropdown
+      align="center"
+      trigger={({ open, toggle }) => (
+        <div className={cx("font-size")}>
+          <div className={cx("font-size__control")}>
+            <button
+              type="button"
+              className={cx("font-size__button")}
+              aria-label="Decrease font size"
+              disabled={value <= MIN_FONT_SIZE}
+              onMouseDown={preventEditorBlur}
+              onClick={handleDecrease}
+            >
+              <Icon icon="mdi:minus" />
+            </button>
 
-        <input
-          type="number"
-          min={MIN_FONT_SIZE}
-          max={MAX_FONT_SIZE}
-          value={value}
-          className={cx("font-size__input")}
-          aria-label="Font size"
-          onFocus={handleInputFocus}
-          onChange={handleInputChange}
-          onMouseDown={(event) => {
-            event.stopPropagation();
-          }}
-        />
+            <input
+              type="number"
+              min={MIN_FONT_SIZE}
+              max={MAX_FONT_SIZE}
+              value={inputValue}
+              className={cx("font-size__input")}
+              aria-label="Font size"
+              onFocus={() => {
+                if (!open) {
+                  toggle();
+                }
+              }}
+              onChange={handleInputChange}
+              onKeyDown={handleInputKeyDown}
+              onMouseDown={(event) => {
+                event.stopPropagation();
+              }}
+            />
 
-        <button
-          type="button"
-          className={cx("font-size__button")}
-          aria-label="Increase font size"
-          disabled={value >= MAX_FONT_SIZE}
-          onMouseDown={preventEditorBlur}
-          onClick={handleIncrease}
-        >
-          <Icon icon="mdi:plus" />
-        </button>
-      </div>
-
-      {open && (
+            <button
+              type="button"
+              className={cx("font-size__button")}
+              aria-label="Increase font size"
+              disabled={value >= MAX_FONT_SIZE}
+              onMouseDown={preventEditorBlur}
+              onClick={handleIncrease}
+            >
+              <Icon icon="mdi:plus" />
+            </button>
+          </div>
+        </div>
+      )}
+    >
+      {({ close }) => (
         <div className={cx("font-size__popover")}>
           {FONT_SIZES.map((size) => (
             <button
@@ -121,13 +146,13 @@ export default function FontSize({ value, onChange }: FontSizeProps) {
                 "font-size__option--active": value === size,
               })}
               onMouseDown={preventEditorBlur}
-              onClick={() => handleSelect(size)}
+              onClick={() => handleSelect(size, close)}
             >
               {size}
             </button>
           ))}
         </div>
       )}
-    </div>
+    </Dropdown>
   );
 }
