@@ -1,0 +1,87 @@
+.formulaBar {
+  display: flex;
+  align-items: center;
+
+  min-width: 0;
+  height: 36px;
+
+  padding: 0 8px;
+
+  border-bottom: 1px solid #dadce0;
+  background-color: #fff;
+}
+
+.nameBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 64px;
+  height: 100%;
+
+  flex-shrink: 0;
+
+  font-size: 13px;
+  color: #444746;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+
+  flex-shrink: 0;
+
+  margin: 0 8px;
+
+  background-color: #dadce0;
+}
+
+.fx {
+  flex-shrink: 0;
+
+  margin-right: 8px;
+
+  font-family: serif;
+  font-size: 14px;
+  font-style: italic;
+  color: #5f6368;
+}
+
+.editor {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+
+  overflow: hidden;
+
+  :global(.ProseMirror) {
+    width: 100%;
+    min-width: 0;
+
+    height: 100%;
+
+    margin: 0;
+    padding: 0;
+
+    outline: none;
+    border: 0;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    white-space: nowrap;
+
+    font-size: 14px;
+    line-height: 36px;
+
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  :global(.ProseMirror p) {
+    margin: 0;
+  }
+}

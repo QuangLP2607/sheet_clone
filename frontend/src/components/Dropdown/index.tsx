@@ -7,6 +7,7 @@ import styles from "./Dropdown.module.scss";
 interface DropdownTriggerProps {
   open: boolean;
   toggle: () => void;
+  close: () => void;
 }
 
 interface DropdownContentProps {
@@ -27,7 +28,7 @@ const VIEWPORT_PADDING = 8;
 export default function Dropdown({
   trigger,
   children,
-  offset = 4,
+  offset = 0,
   align = "start",
 }: DropdownProps) {
   const [open, setOpen] = useState(false);
@@ -91,12 +92,10 @@ export default function Dropdown({
     updatePosition();
 
     window.addEventListener("resize", updatePosition);
-
     window.addEventListener("scroll", updatePosition, true);
 
     return () => {
       window.removeEventListener("resize", updatePosition);
-
       window.removeEventListener("scroll", updatePosition, true);
     };
   }, [open, offset, align]);
@@ -115,6 +114,7 @@ export default function Dropdown({
         {trigger({
           open,
           toggle,
+          close,
         })}
       </div>
 

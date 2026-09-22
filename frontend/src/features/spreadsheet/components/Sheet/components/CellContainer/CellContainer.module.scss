@@ -1,0 +1,27 @@
+.cell {
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.value > div {
+  margin: 0;
+  padding: 1px 2px;
+}
+
+.editor {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  box-sizing: border-box;
+  padding: 1px 2px;
+  z-index: 3;
+  display: flex;
+  background: inherit;
+  overflow: visible;
+
+  border: 2px solid #0b57d0;
+  box-shadow: none;
+  outline: 2px solid #a8c7fa;
+}

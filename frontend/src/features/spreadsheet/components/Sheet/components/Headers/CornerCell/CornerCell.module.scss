@@ -1,0 +1,16 @@
+.corner {
+  flex-shrink: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  box-sizing: border-box;
+
+  background-color: #f8f9fa;
+
+  border-right: 1px solid #d3d3d3;
+  border-bottom: 1px solid #d3d3d3;
+
+  user-select: none;
+}

@@ -1,0 +1,32 @@
+.tool__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: #f0f4f9;
+  color: #444746;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover:not(:disabled) {
+    background: #444746 8% transparent;
+  }
+
+  &--active {
+    background: #d3e3fd;
+  }
+
+  &--open {
+    background: #dfdfdf;
+  }
+}
+
+.disabled {
+  opacity: 0.5;
+}

@@ -1,0 +1,10 @@
+.grid {
+  // flex: 1;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden !important;
+
+  border-right: 1px solid #d3d3d3;
+  border-bottom: 1px solid #d3d3d3;
+}

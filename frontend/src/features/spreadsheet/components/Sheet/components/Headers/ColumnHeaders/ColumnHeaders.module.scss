@@ -1,0 +1,43 @@
+.grid {
+  overflow: hidden !important;
+
+  border-right: 1px solid #d3d3d3;
+}
+
+.cell {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+
+  background-color: #f8f9fa;
+  color: #333;
+
+  font-weight: 500;
+
+  border-right: 1px solid #d3d3d3;
+  border-bottom: 1px solid #d3d3d3;
+
+  user-select: none;
+
+  &::after {
+    content: "";
+
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 6px;
+
+    cursor: col-resize;
+    z-index: 10;
+  }
+
+  &--resizing {
+    user-select: none;
+  }
+}

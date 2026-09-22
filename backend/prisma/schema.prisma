@@ -1,35 +1,95 @@
 generator client {
   provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum WorkbookPermission {
+  EDITOR
+  VIEWER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @db.VarChar(255)
+  name         String?  @db.VarChar(100)
+  role         UserRole @default(USER)
+
+  workbooks   Workbook[]
+  permissions WorkbookPermissionRecord[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model Workbook {
+  id       String @id @default(uuid())
+  ownerId  String @map("owner_id")
+  name     String @db.VarChar(255)
+
+  owner       User                         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  permissions WorkbookPermissionRecord[]
+  sheets      Sheet[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([ownerId])
+}
+
+model WorkbookPermissionRecord {
+  id         String             @id @default(uuid())
+  workbookId String             @map("workbook_id")
+  userId     String             @map("user_id")
+  permission WorkbookPermission
+
+  workbook Workbook @relation(fields: [workbookId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([workbookId, userId])
+  @@index([userId])
+}
+
 model Sheet {
-  id        String   @id @default(cuid())
-  name      String
+  id         String @id @default(uuid())
+  workbookId String @map("workbook_id")
+  name       String @db.VarChar(255)
+  position   Int
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  workbook Workbook @relation(fields: [workbookId], references: [id], onDelete: Cascade)
+  cells    Cell[]
 
-  cells     Cell[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([workbookId])
+  @@unique([workbookId, position])
 }
 
 model Cell {
-  id        String   @id @default(cuid())
+  id          String  @id @default(uuid())
+  sheetId     String  @map("sheet_id")
+  rowIndex    Int     @map("row_index")
+  columnIndex Int     @map("column_index")
+  content     String?
 
-  sheetId   String
-  sheet     Sheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  sheet Sheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
 
-  row       Int
-  col       Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  value     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([sheetId, row, col])
+  @@unique([sheetId, rowIndex, columnIndex])
   @@index([sheetId])
 }

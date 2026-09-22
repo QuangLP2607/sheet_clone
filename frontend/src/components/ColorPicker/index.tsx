@@ -18,9 +18,9 @@ const cx = classNames.bind(styles);
 const MAX_RECENT_COLORS = 8;
 
 interface ColorPickerProps {
-  value?: string | null;
-  resetColor?: string | null;
-  onChange?: (color: string | null) => void;
+  value?: string;
+  resetColor?: string;
+  onChange?: (color: string) => void;
   children?: ReactNode | ((props: { open: boolean }) => ReactNode);
 }
 
@@ -63,7 +63,7 @@ function ColorButton({ color, active, onClick }: ColorButtonProps) {
 
 export default function ColorPicker({
   value,
-  resetColor = null,
+  resetColor = "#000000",
   onChange,
   children,
 }: ColorPickerProps) {
@@ -81,7 +81,7 @@ export default function ColorPicker({
     );
   };
 
-  const selectColor = (color: string | null, close: () => void) => {
+  const selectColor = (color: string, close: () => void) => {
     onChange?.(color);
     setShowCustomColor(false);
     close();

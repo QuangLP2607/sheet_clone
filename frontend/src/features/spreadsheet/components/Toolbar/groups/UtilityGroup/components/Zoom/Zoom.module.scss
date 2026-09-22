@@ -1,0 +1,117 @@
+.zoom {
+  &__control {
+    display: flex;
+    align-items: center;
+
+    height: 28px;
+    padding: 0 4px;
+
+    border: 2px solid transparent;
+    border-radius: 4px;
+
+    background: transparent;
+
+    box-sizing: border-box;
+    cursor: pointer;
+
+    &:focus-within {
+      border-color: #0b57d0;
+      background: #fff;
+    }
+  }
+
+  &__input {
+    width: 36px;
+    height: 26px;
+
+    padding: 4px 0;
+
+    border: 0;
+    outline: none;
+
+    background: transparent;
+
+    text-align: right;
+
+    appearance: textfield;
+    box-sizing: border-box;
+
+    cursor: text;
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      margin: 0;
+      appearance: none;
+    }
+  }
+
+  &__percent {
+    margin-left: 2px;
+
+    font-size: 13px;
+    line-height: 1;
+
+    user-select: none;
+  }
+
+  &__arrow {
+    width: 16px;
+    height: 16px;
+
+    margin-left: 2px;
+
+    flex-shrink: 0;
+
+    transition: transform 0.15s ease;
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__popover {
+    display: flex;
+    flex-direction: column;
+
+    width: 64px;
+    max-height: 320px;
+
+    padding: 4px 1px;
+
+    overflow-y: auto;
+
+    box-sizing: border-box;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    min-height: 28px;
+
+    padding: 4px 6px;
+
+    border: 0;
+
+    background: transparent;
+
+    box-sizing: border-box;
+
+    text-align: center;
+    cursor: pointer;
+
+    &:hover {
+      background: #f1f3f4;
+    }
+
+    &--active {
+      background: #e8f0fe;
+
+      &:hover {
+        background: #e8f0fe;
+      }
+    }
+  }
+}

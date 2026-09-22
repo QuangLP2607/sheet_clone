@@ -2,8 +2,7 @@ export interface TextStyle {
   bold: boolean;
   italic: boolean;
   strike: boolean;
-
-  fontFamily: string;
+  fontFamily: string | null;
   fontSize: number;
-  color: string | null;
+  color: string;
 }

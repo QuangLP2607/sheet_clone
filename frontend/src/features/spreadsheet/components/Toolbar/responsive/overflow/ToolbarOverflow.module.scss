@@ -1,0 +1,49 @@
+.more {
+  display: flex;
+  align-items: center;
+
+  margin-left: 8px;
+
+  flex: 0 0 auto;
+}
+
+.overflow {
+  position: fixed;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  width: fit-content;
+  max-width: calc(100vw - 16px);
+
+  padding: 4px;
+
+  box-sizing: border-box;
+
+  background: #f0f4f9;
+  border-radius: 4px;
+
+  box-shadow: 0 2px 6px 2px rgb(0 0 0 / 15%);
+
+  visibility: hidden;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+
+  flex: 0 0 auto;
+}
+
+.divider {
+  flex: 0 0 1px;
+
+  width: 1px;
+  height: 20px;
+
+  background-color: #c4c7c5;
+}
