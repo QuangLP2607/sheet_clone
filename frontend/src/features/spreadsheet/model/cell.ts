@@ -1,15 +1,23 @@
-import type { JSONContent } from "@tiptap/core";
+// import type { JSONContent } from "@tiptap/core";
 
-import type { CellStyle } from "@/types/cell-style";
+// import type { CellStyle } from "../types/cell-style";
+// import type { TextStyle } from "../types/text-style";
 
-export type CellKey = `${number}:${number}`;
+// export interface CellPosition {
+//   row: number;
+//   column: number;
+// }
 
-export interface CellData {
-  content: JSONContent;
-  style: CellStyle;
-}
+// export type CellKey = `${number}:${number}`;
 
-export interface InitialCellData {
-  content?: JSONContent;
-  style?: Partial<CellStyle>;
-}
+// export interface CellData {
+//   content: JSONContent;
+//   textStyle: TextStyle;
+//   style: CellStyle;
+// }
+
+// export interface InitialCellData {
+//   content?: JSONContent;
+//   textStyle?: Partial<TextStyle>;
+//   style?: Partial<CellStyle>;
+// }

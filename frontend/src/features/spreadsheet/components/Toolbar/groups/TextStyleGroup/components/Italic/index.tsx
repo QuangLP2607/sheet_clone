@@ -1,24 +1,26 @@
-import ToolbarButton from "../../../../base/ToolButton";
-import classNames from "classnames/bind";
-import styles from "./Italic.module.scss";
-
 import { Icon } from "@iconify/react";
+import classNames from "classnames/bind";
 
+import type { TextStyle } from "@/features/spreadsheet/types";
+import ToolbarButton from "../../../../base/ToolButton";
+
+import styles from "./Italic.module.scss";
 const cx = classNames.bind(styles);
 
 interface ItalicProps {
-  active: boolean;
-  onClick: () => void;
+  value: TextStyle["italic"];
+  updateTextStyle: (patch: Partial<TextStyle>) => void;
 }
 
-export default function Italic({ active, onClick }: ItalicProps) {
+export default function Italic({ value, updateTextStyle }: ItalicProps) {
   return (
     <ToolbarButton
       className={cx("italic__button")}
-      active={active}
-      onClick={onClick}
+      active={value}
+      onClick={() => updateTextStyle({ italic: !value })}
     >
-      <Icon icon="tabler:italic" />
+      {" "}
+      <Icon icon="tabler:italic" />{" "}
     </ToolbarButton>
   );
 }

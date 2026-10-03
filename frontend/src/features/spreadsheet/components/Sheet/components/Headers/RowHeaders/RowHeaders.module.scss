@@ -41,6 +41,10 @@
     z-index: 10;
   }
 
+  &--selected {
+    background-color: #d9e7ff;
+  }
+
   &--resizing {
     user-select: none;
   }

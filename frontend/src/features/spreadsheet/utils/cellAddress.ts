@@ -1,7 +1,19 @@
-import type { CellKey } from "../model/cell";
+import type { CellKey } from "@/features/spreadsheet/types";
 
 export function getCellKey(rowIndex: number, columnIndex: number): CellKey {
   return `${rowIndex}:${columnIndex}`;
+}
+
+export function parseCellKey(cellKey: CellKey): {
+  rowIndex: number;
+  columnIndex: number;
+} {
+  const [rowIndex, columnIndex] = cellKey.split(":").map(Number);
+
+  return {
+    rowIndex,
+    columnIndex,
+  };
 }
 
 export function getColumnLabel(columnIndex: number): string {

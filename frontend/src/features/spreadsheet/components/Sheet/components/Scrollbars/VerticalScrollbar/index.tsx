@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
-
 import type { UIEvent } from "react";
+
 import classNames from "classnames/bind";
 
 import styles from "./VerticalScrollbar.module.scss";
@@ -18,8 +18,8 @@ const VerticalScrollbar = forwardRef<HTMLDivElement, VerticalScrollbarProps>(
     return (
       <div ref={ref} className={cx("scrollbar", className)} onScroll={onScroll}>
         <div
+          className={cx("content")}
           style={{
-            width: 1,
             height: totalHeight,
           }}
         />

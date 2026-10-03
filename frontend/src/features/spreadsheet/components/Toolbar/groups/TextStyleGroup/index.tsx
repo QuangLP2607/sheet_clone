@@ -5,34 +5,28 @@ import Italic from "./components/Italic";
 import Strike from "./components/Strike";
 import TextColor from "./components/TextColor";
 
-import type { TextStyle } from "@/types/richText";
+import type { TextStyle } from "@/features/spreadsheet/types";
 
 export interface TextStyleGroupProps {
   textStyle: TextStyle;
-  toggleBold: () => void;
-  toggleItalic: () => void;
-  toggleStrike: () => void;
-  setColor: (color: string | null) => void;
+  updateTextStyle: (patch: Partial<TextStyle>) => void;
   mode?: ToolGroupMode;
 }
 
 export default function TextStyleGroup({
   textStyle,
-  toggleBold,
-  toggleItalic,
-  toggleStrike,
-  setColor,
+  updateTextStyle,
   mode = "toolbar",
 }: TextStyleGroupProps) {
   return (
     <ToolGroup mode={mode}>
-      <Bold active={textStyle.bold} onClick={toggleBold} />
+      <Bold value={textStyle.bold} updateTextStyle={updateTextStyle} />
 
-      <Italic active={textStyle.italic} onClick={toggleItalic} />
+      <Italic value={textStyle.italic} updateTextStyle={updateTextStyle} />
 
-      <Strike active={textStyle.strike} onClick={toggleStrike} />
+      <Strike value={textStyle.strike} updateTextStyle={updateTextStyle} />
 
-      <TextColor color={textStyle.color} setColor={setColor} />
+      <TextColor value={textStyle.color} updateTextStyle={updateTextStyle} />
     </ToolGroup>
   );
 }

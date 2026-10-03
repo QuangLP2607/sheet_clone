@@ -1,32 +1,27 @@
 import classNames from "classnames/bind";
 import { Icon } from "@iconify/react";
 
+import {
+  type TextStyle,
+  DEFAULT_TEXT_STYLE,
+} from "@/features/spreadsheet/types";
 import ToolbarButton from "../../../../base/ToolButton";
 import ColorPicker from "@/components/ColorPicker";
 
 import styles from "./TextColor.module.scss";
-
 const cx = classNames.bind(styles);
 
-const DEFAULT_TEXT_COLOR = "#000000";
-
 interface TextColorProps {
-  color: string | null;
-  setColor: (color: string | null) => void;
+  value: TextStyle["color"];
+  updateTextStyle: (patch: Partial<TextStyle>) => void;
 }
 
-export default function TextColor({ color, setColor }: TextColorProps) {
-  const displayColor = color ?? DEFAULT_TEXT_COLOR;
-
-  const handleColorChange = (nextColor: string) => {
-    setColor(nextColor === DEFAULT_TEXT_COLOR ? null : nextColor);
-  };
-
+export default function TextColor({ value, updateTextStyle }: TextColorProps) {
   return (
     <ColorPicker
-      value={displayColor}
-      resetColor={DEFAULT_TEXT_COLOR}
-      onChange={handleColorChange}
+      value={value}
+      resetColor={DEFAULT_TEXT_STYLE.color}
+      onChange={(color) => updateTextStyle({ color })}
     >
       {({ open }) => (
         <ToolbarButton className={cx("text-color__button")} open={open}>
@@ -34,9 +29,7 @@ export default function TextColor({ color, setColor }: TextColorProps) {
 
           <span
             className={cx("text-color__indicator")}
-            style={{
-              backgroundColor: displayColor,
-            }}
+            style={{ backgroundColor: value }}
           />
         </ToolbarButton>
       )}

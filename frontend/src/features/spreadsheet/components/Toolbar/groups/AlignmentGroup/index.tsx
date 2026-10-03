@@ -5,7 +5,7 @@ import VerticalAlign from "./components/VerticalAlign";
 import TextWrapping from "./components/TextWrapping";
 import TextRotation from "./components/TextRotation";
 
-import type { CellStyle } from "@/types/cell-style";
+import type { CellStyle } from "@/features/spreadsheet/types";
 
 interface AlignmentGroupProps {
   cellStyle: CellStyle;
@@ -22,20 +22,23 @@ export default function AlignmentGroup({
     <ToolGroup mode={mode}>
       <HorizontalAlign
         value={cellStyle.horizontalAlign}
-        onChange={(horizontalAlign) => updateCellStyle({ horizontalAlign })}
+        updateCellStyle={updateCellStyle}
       />
 
       <VerticalAlign
         value={cellStyle.verticalAlign}
-        onChange={(verticalAlign) => updateCellStyle({ verticalAlign })}
+        updateCellStyle={updateCellStyle}
       />
 
       <TextWrapping
         value={cellStyle.textWrapping}
-        onChange={(textWrapping) => updateCellStyle({ textWrapping })}
+        updateCellStyle={updateCellStyle}
       />
 
-      <TextRotation />
+      <TextRotation
+        value={cellStyle.textRotation}
+        updateCellStyle={updateCellStyle}
+      />
     </ToolGroup>
   );
 }

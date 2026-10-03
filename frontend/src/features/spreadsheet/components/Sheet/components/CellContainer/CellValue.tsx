@@ -4,6 +4,8 @@ import type { JSONContent } from "@tiptap/core";
 
 interface CellValueProps {
   content: JSONContent;
+  className?: string;
+  style?: CSSProperties;
 }
 
 function getMarkStyle(
@@ -72,7 +74,11 @@ function renderNode(node: JSONContent): ReactNode {
 
   if (node.type === "paragraph") {
     return (
-      <div>
+      <div
+      // style={{
+      //   textAlign,
+      // }}
+      >
         {node.content?.map((child, index) => (
           <Fragment key={index}>{renderNode(child)}</Fragment>
         ))}
@@ -83,12 +89,16 @@ function renderNode(node: JSONContent): ReactNode {
   return null;
 }
 
-export default function CellValue({ content }: CellValueProps) {
+export default function CellValue({
+  content,
+  className,
+  style,
+}: CellValueProps) {
   return (
-    <>
+    <div className={className} style={style}>
       {content.content?.map((node, index) => (
         <Fragment key={index}>{renderNode(node)}</Fragment>
       ))}
-    </>
+    </div>
   );
 }

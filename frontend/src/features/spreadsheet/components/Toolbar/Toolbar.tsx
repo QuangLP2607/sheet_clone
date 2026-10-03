@@ -1,16 +1,17 @@
 import { Fragment, useCallback, useLayoutEffect, useRef } from "react";
 
-import type { Editor } from "@tiptap/react";
 import classNames from "classnames/bind";
 
-import type { CellStyle } from "@/types/cell-style";
+import type { CellStyle, TextStyle } from "@/features/spreadsheet/types";
 
-import UtilityGroup from "./groups/UtilityGroup";
-import FontGroup from "./groups/FontGroup";
-import FontSizeGroup from "./groups/FontSizeGroup";
-import TextStyleGroup from "./groups/TextStyleGroup";
-import CellStyleGroup from "./groups/CellStyleGroup";
-import AlignmentGroup from "./groups/AlignmentGroup";
+import {
+  UtilityGroup,
+  FontGroup,
+  FontSizeGroup,
+  TextStyleGroup,
+  CellStyleGroup,
+  AlignmentGroup,
+} from "./groups";
 
 import ToolbarMeasureItem from "./responsive/measure/ToolbarMeasureItem";
 import ToolbarOverflow from "./responsive/overflow/ToolbarOverflow";
@@ -21,8 +22,6 @@ import {
   useToolbarOverflow,
 } from "./responsive/overflow/useToolbarOverflow";
 
-import { useToolbar } from "./hooks/useToolbar";
-
 import type { ToolGroupMode } from "./base/ToolGroup";
 
 import styles from "./Toolbar.module.scss";
@@ -30,25 +29,10 @@ import styles from "./Toolbar.module.scss";
 const cx = classNames.bind(styles);
 
 export interface ToolbarProps {
-  /*
-   * Cell hiện tại đang editing.
-   */
-  editing: boolean;
-
-  /*
-   * Cell hiện tại mà Toolbar đang thao tác.
-   *
-   * Thường truyền selectedCell.
-   */
-  cellKey: string | null;
-
-  editor: Editor | null;
-
-  /*
-   * Style của selected cell.
-   */
+  textStyle: TextStyle;
   cellStyle: CellStyle;
 
+  updateTextStyle: (patch: Partial<TextStyle>) => void;
   updateCellStyle: (patch: Partial<CellStyle>) => void;
 
   zoom: number;
@@ -56,10 +40,9 @@ export interface ToolbarProps {
 }
 
 export default function Toolbar({
-  editing,
-  cellKey,
-  editor,
+  textStyle,
   cellStyle,
+  updateTextStyle,
   updateCellStyle,
   zoom,
   setZoom,
@@ -69,27 +52,6 @@ export default function Toolbar({
   const { visibleGroups, overflowGroups, handleGroupResize, calculateGroups } =
     useToolbarOverflow();
 
-  const {
-    textStyle,
-
-    toggleBold,
-    toggleItalic,
-    toggleStrike,
-
-    setColor,
-    setFontSize,
-    setFontFamily,
-  } = useToolbar({
-    editing,
-    cellKey,
-    editor,
-    cellStyle,
-    updateCellStyle,
-  });
-
-  /**
-   * Render group.
-   */
   const renderGroup = useCallback(
     (group: (typeof GROUPS)[number], mode: ToolGroupMode = "toolbar") => {
       switch (group) {
@@ -99,8 +61,8 @@ export default function Toolbar({
         case "font":
           return (
             <FontGroup
-              value={textStyle.fontFamily}
-              onChange={setFontFamily}
+              textStyle={textStyle}
+              updateTextStyle={updateTextStyle}
               mode={mode}
             />
           );
@@ -109,7 +71,7 @@ export default function Toolbar({
           return (
             <FontSizeGroup
               textStyle={textStyle}
-              setFontSize={setFontSize}
+              updateTextStyle={updateTextStyle}
               mode={mode}
             />
           );
@@ -118,10 +80,7 @@ export default function Toolbar({
           return (
             <TextStyleGroup
               textStyle={textStyle}
-              toggleBold={toggleBold}
-              toggleItalic={toggleItalic}
-              toggleStrike={toggleStrike}
-              setColor={setColor}
+              updateTextStyle={updateTextStyle}
               mode={mode}
             />
           );
@@ -148,29 +107,9 @@ export default function Toolbar({
           return null;
       }
     },
-    [
-      zoom,
-      setZoom,
-
-      textStyle,
-
-      setFontFamily,
-      setFontSize,
-
-      toggleBold,
-      toggleItalic,
-      toggleStrike,
-
-      setColor,
-
-      cellStyle,
-      updateCellStyle,
-    ],
+    [zoom, setZoom, textStyle, updateTextStyle, cellStyle, updateCellStyle],
   );
 
-  /**
-   * Theo dõi width của toolbar.
-   */
   useLayoutEffect(() => {
     const toolbar = toolbarRef.current;
 
@@ -182,7 +121,6 @@ export default function Toolbar({
       const style = window.getComputedStyle(toolbar);
 
       const paddingLeft = parseFloat(style.paddingLeft) || 0;
-
       const paddingRight = parseFloat(style.paddingRight) || 0;
 
       const availableWidth =

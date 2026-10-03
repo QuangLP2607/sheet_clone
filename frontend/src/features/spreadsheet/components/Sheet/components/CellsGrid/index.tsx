@@ -1,13 +1,14 @@
-import { forwardRef, memo, useMemo } from "react";
-
-import type { Editor } from "@tiptap/react";
+import { forwardRef, memo } from "react";
 
 import {
   VariableSizeGrid as Grid,
+  areEqual,
   type GridChildComponentProps,
 } from "react-window";
 
 import classNames from "classnames/bind";
+
+import { useSizeStore } from "@/features/spreadsheet/stores/sizeStore";
 
 import CellContainer from "../CellContainer";
 
@@ -18,100 +19,46 @@ const cx = classNames.bind(styles);
 interface CellsGridProps {
   totalRows: number;
   totalCols: number;
-
   width: number;
   height: number;
-
-  onCellSelect: (rowIndex: number, columnIndex: number) => void;
-
-  onCellDoubleClick: (rowIndex: number, columnIndex: number) => void;
-
-  onEditorReady: (editor: Editor) => void;
-  onEditorFocus: (editor: Editor) => void;
-
-  onFinishEditing: () => void;
 }
 
-interface CellItemData {
-  onCellSelect: (rowIndex: number, columnIndex: number) => void;
+const GridCell = memo(function GridCell({
+  rowIndex,
+  columnIndex,
+  style,
+}: GridChildComponentProps) {
+  return (
+    <div style={style}>
+      <CellContainer rowIndex={rowIndex} columnIndex={columnIndex} />
+    </div>
+  );
+}, areEqual);
 
-  onCellDoubleClick: (rowIndex: number, columnIndex: number) => void;
-
-  onEditorReady: (editor: Editor) => void;
-  onEditorFocus: (editor: Editor) => void;
-
-  onFinishEditing: () => void;
-}
-
-const Cell = memo(
-  ({
-    rowIndex,
-    columnIndex,
-    style,
-    data,
-  }: GridChildComponentProps<CellItemData>) => {
-    return (
-      <div style={style}>
-        <CellContainer
-          rowIndex={rowIndex}
-          columnIndex={columnIndex}
-          onCellSelect={data.onCellSelect}
-          onCellDoubleClick={data.onCellDoubleClick}
-          onEditorReady={data.onEditorReady}
-          onEditorFocus={data.onEditorFocus}
-          onFinishEditing={data.onFinishEditing}
-        />
-      </div>
-    );
-  },
-);
-
-Cell.displayName = "Cell";
+GridCell.displayName = "GridCell";
 
 const CellsGrid = forwardRef<Grid, CellsGridProps>(function CellsGrid(
-  {
-    totalRows,
-    totalCols,
-    width,
-    height,
-    onCellSelect,
-    onCellDoubleClick,
-    onEditorReady,
-    onEditorFocus,
-    onFinishEditing,
-  },
+  { totalRows, totalCols, width, height },
   ref,
 ) {
-  const itemData = useMemo<CellItemData>(
-    () => ({
-      onCellSelect,
-      onCellDoubleClick,
-      onEditorReady,
-      onEditorFocus,
-      onFinishEditing,
-    }),
-    [
-      onCellSelect,
-      onCellDoubleClick,
-      onEditorReady,
-      onEditorFocus,
-      onFinishEditing,
-    ],
-  );
+  const getColumnWidth = useSizeStore((state) => state.getColumnWidth);
+
+  const getRowHeight = useSizeStore((state) => state.getRowHeight);
 
   return (
     <Grid
-      className={cx("grid")}
       ref={ref}
+      className={cx("grid")}
       columnCount={totalCols}
-      rowCount={totalRows}
-      width={width}
+      columnWidth={getColumnWidth}
       height={height}
-      itemData={itemData}
-      columnWidth={() => 100}
-      rowHeight={() => 24}
+      rowCount={totalRows}
+      rowHeight={getRowHeight}
+      width={width}
+      overscanColumnCount={1}
+      overscanRowCount={1}
     >
-      {Cell}
+      {GridCell}
     </Grid>
   );
 });

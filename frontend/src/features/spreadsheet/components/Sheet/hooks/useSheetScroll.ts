@@ -40,57 +40,11 @@ export function useSheetScroll({
     y: 0,
   });
 
-  const frameRef = useRef<number | null>(null);
+  const wheelFrameRef = useRef<number | null>(null);
+  const syncFrameRef = useRef<number | null>(null);
 
-  /*
-   * Scroll range
-   */
-
-  const getMaxScrollLeft = useCallback(() => {
-    const element = horizontalScrollbarRef.current;
-
-    if (!element) {
-      return 0;
-    }
-
-    return Math.max(0, element.scrollWidth - element.clientWidth);
-  }, [horizontalScrollbarRef]);
-
-  const getMaxScrollTop = useCallback(() => {
-    const element = verticalScrollbarRef.current;
-
-    if (!element) {
-      return 0;
-    }
-
-    return Math.max(0, element.scrollHeight - element.clientHeight);
-  }, [verticalScrollbarRef]);
-
-  /*
-   * Clamp
-   */
-
-  const clampScrollLeft = useCallback(
-    (value: number) => {
-      return Math.min(getMaxScrollLeft(), Math.max(0, value));
-    },
-    [getMaxScrollLeft],
-  );
-
-  const clampScrollTop = useCallback(
-    (value: number) => {
-      return Math.min(getMaxScrollTop(), Math.max(0, value));
-    },
-    [getMaxScrollTop],
-  );
-
-  /*
-   * Đồng bộ grid.
-   *
-   * Không cập nhật lại scrollbar ở đây.
-   *
-   * Scrollbar là nơi phát sinh scroll event
-   * thì không nên tự set lại chính nó.
+  /**
+   * Sync react-window grids with the current native scroll position.
    */
   const syncSheetPosition = useCallback(
     (left: number, top: number) => {
@@ -112,129 +66,139 @@ export function useSheetScroll({
     [bodyGridRef, rowHeaderRef, columnHeaderRef],
   );
 
-  /*
-   * Đồng bộ scrollbar.
+  /**
+   * Schedule synchronization for native scrollbar events.
    *
-   * Dùng khi scroll đến từ wheel / touch,
-   * vì lúc đó scrollbar chưa tự thay đổi.
+   * Used when the user directly interacts with
+   * the native scrollbar.
    */
-  const syncScrollbars = useCallback(
-    (left: number, top: number) => {
-      if (horizontalScrollbarRef.current) {
-        horizontalScrollbarRef.current.scrollLeft = left;
+  const scheduleSync = useCallback(() => {
+    if (syncFrameRef.current !== null) {
+      return;
+    }
+
+    syncFrameRef.current = requestAnimationFrame(() => {
+      syncFrameRef.current = null;
+
+      syncSheetPosition(scrollPos.current.left, scrollPos.current.top);
+    });
+  }, [syncSheetPosition]);
+
+  /**
+   * Native horizontal scrollbar.
+   *
+   * This is the source of truth when the user
+   * directly interacts with the scrollbar.
+   */
+  const handleHorizontalScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      const left = event.currentTarget.scrollLeft;
+
+      if (left === scrollPos.current.left) {
+        return;
       }
 
-      if (verticalScrollbarRef.current) {
-        verticalScrollbarRef.current.scrollTop = top;
-      }
+      scrollPos.current.left = left;
+
+      scheduleSync();
     },
-    [horizontalScrollbarRef, verticalScrollbarRef],
+    [scheduleSync],
   );
 
-  /*
-   * Set vị trí scroll trực tiếp.
-   */
-  const setScrollPosition = useCallback(
-    (left: number, top: number) => {
-      const nextLeft = clampScrollLeft(left);
-      const nextTop = clampScrollTop(top);
-
-      scrollPos.current = {
-        left: nextLeft,
-        top: nextTop,
-      };
-
-      syncSheetPosition(nextLeft, nextTop);
-    },
-    [clampScrollLeft, clampScrollTop, syncSheetPosition],
-  );
-
-  /*
-   * Apply pending wheel/touch delta.
+  /**
+   * Native vertical scrollbar.
    *
-   * Chỉ chạy tối đa một lần mỗi animation frame.
+   * This is the source of truth when the user
+   * directly interacts with the scrollbar.
    */
-  const flushScroll = useCallback(() => {
-    frameRef.current = null;
+  const handleVerticalScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      const top = event.currentTarget.scrollTop;
+
+      if (top === scrollPos.current.top) {
+        return;
+      }
+
+      scrollPos.current.top = top;
+
+      scheduleSync();
+    },
+    [scheduleSync],
+  );
+
+  /**
+   * Flush wheel movement.
+   *
+   * Important:
+   *
+   * Wheel scrolling uses ONE RAF.
+   *
+   * We calculate the next native scrollbar position
+   * and sync react-window in the same frame.
+   *
+   * We do not wait for the native scrollbar's
+   * scroll event to trigger another RAF.
+   */
+  const flushWheel = useCallback(() => {
+    wheelFrameRef.current = null;
 
     const { x, y } = pendingDelta.current;
 
-    pendingDelta.current = {
-      x: 0,
-      y: 0,
-    };
+    pendingDelta.current.x = 0;
+    pendingDelta.current.y = 0;
 
     if (x === 0 && y === 0) {
       return;
     }
 
-    const nextLeft = clampScrollLeft(scrollPos.current.left + x);
+    const horizontalScrollbar = horizontalScrollbarRef.current;
 
-    const nextTop = clampScrollTop(scrollPos.current.top + y);
+    const verticalScrollbar = verticalScrollbarRef.current;
 
-    scrollPos.current = {
-      left: nextLeft,
-      top: nextTop,
-    };
+    let nextLeft = scrollPos.current.left;
+    let nextTop = scrollPos.current.top;
+
+    if (x !== 0 && horizontalScrollbar) {
+      horizontalScrollbar.scrollLeft += x;
+
+      nextLeft = horizontalScrollbar.scrollLeft;
+    }
+
+    if (y !== 0 && verticalScrollbar) {
+      verticalScrollbar.scrollTop += y;
+
+      nextTop = verticalScrollbar.scrollTop;
+    }
+
+    scrollPos.current.left = nextLeft;
+    scrollPos.current.top = nextTop;
 
     syncSheetPosition(nextLeft, nextTop);
+  }, [horizontalScrollbarRef, verticalScrollbarRef, syncSheetPosition]);
 
-    syncScrollbars(nextLeft, nextTop);
-  }, [clampScrollLeft, clampScrollTop, syncSheetPosition, syncScrollbars]);
-
-  /*
-   * Di chuyển sheet theo delta.
-   *
-   * Wheel / touch có thể phát rất nhiều event liên tục.
-   * Gom chúng lại và xử lý tối đa một lần / frame.
+  /**
+   * Accumulate wheel movement and process it
+   * once per animation frame.
    */
   const scrollBy = useCallback(
     (deltaX: number, deltaY: number) => {
       pendingDelta.current.x += deltaX;
       pendingDelta.current.y += deltaY;
 
-      if (frameRef.current !== null) {
+      if (wheelFrameRef.current !== null) {
         return;
       }
 
-      frameRef.current = requestAnimationFrame(flushScroll);
+      wheelFrameRef.current = requestAnimationFrame(flushWheel);
     },
-    [flushScroll],
+    [flushWheel],
   );
 
-  /*
-   * Horizontal scrollbar
+  /**
+   * Wheel on the sheet.
    *
-   * Scrollbar là nguồn phát sinh scroll.
-   * Không set lại horizontalScrollbar ở đây.
-   */
-  const handleHorizontalScroll = useCallback(
-    (event: UIEvent<HTMLDivElement>) => {
-      const left = event.currentTarget.scrollLeft;
-
-      scrollPos.current.left = left;
-
-      syncSheetPosition(left, scrollPos.current.top);
-    },
-    [syncSheetPosition],
-  );
-
-  /*
-   * Vertical scrollbar
-   */
-  const handleVerticalScroll = useCallback(
-    (event: UIEvent<HTMLDivElement>) => {
-      const top = event.currentTarget.scrollTop;
-
-      scrollPos.current.top = top;
-
-      syncSheetPosition(scrollPos.current.left, top);
-    },
-    [syncSheetPosition],
-  );
-
-  /*
-   * Wheel
+   * The sheet itself does not scroll.
+   * Instead, it drives the native scrollbar.
    */
   const handleWheel = useCallback(
     (event: WheelEvent<HTMLDivElement>) => {
@@ -251,13 +215,62 @@ export function useSheetScroll({
     [scrollBy],
   );
 
-  /*
-   * Cleanup requestAnimationFrame.
+  /**
+   * Set an absolute scroll position.
+   *
+   * Used for programmatic scrolling such as:
+   * - keyboard navigation
+   * - jumping to a cell
+   * - restoring scroll position
    */
+  const setScrollPosition = useCallback(
+    (left: number, top: number) => {
+      const horizontalScrollbar = horizontalScrollbarRef.current;
+
+      const verticalScrollbar = verticalScrollbarRef.current;
+
+      const maxScrollLeft = horizontalScrollbar
+        ? Math.max(
+            0,
+            horizontalScrollbar.scrollWidth - horizontalScrollbar.clientWidth,
+          )
+        : 0;
+
+      const maxScrollTop = verticalScrollbar
+        ? Math.max(
+            0,
+            verticalScrollbar.scrollHeight - verticalScrollbar.clientHeight,
+          )
+        : 0;
+
+      const nextLeft = Math.min(maxScrollLeft, Math.max(0, left));
+
+      const nextTop = Math.min(maxScrollTop, Math.max(0, top));
+
+      if (horizontalScrollbar) {
+        horizontalScrollbar.scrollLeft = nextLeft;
+      }
+
+      if (verticalScrollbar) {
+        verticalScrollbar.scrollTop = nextTop;
+      }
+
+      scrollPos.current.left = nextLeft;
+      scrollPos.current.top = nextTop;
+
+      syncSheetPosition(nextLeft, nextTop);
+    },
+    [horizontalScrollbarRef, verticalScrollbarRef, syncSheetPosition],
+  );
+
   useEffect(() => {
     return () => {
-      if (frameRef.current !== null) {
-        cancelAnimationFrame(frameRef.current);
+      if (wheelFrameRef.current !== null) {
+        cancelAnimationFrame(wheelFrameRef.current);
+      }
+
+      if (syncFrameRef.current !== null) {
+        cancelAnimationFrame(syncFrameRef.current);
       }
     };
   }, []);

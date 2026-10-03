@@ -2,6 +2,7 @@ import { Icon } from "@iconify/react";
 import classNames from "classnames/bind";
 
 import Dropdown from "@/components/Dropdown";
+import type { CellStyle } from "@/features/spreadsheet/types";
 import ToolbarButton from "../../../../base/ToolButton";
 
 import styles from "./HorizontalAlign.module.scss";
@@ -9,28 +10,42 @@ import styles from "./HorizontalAlign.module.scss";
 const cx = classNames.bind(styles);
 
 interface HorizontalAlignProps {
+  value: CellStyle["horizontalAlign"];
+  updateCellStyle: (patch: Partial<CellStyle>) => void;
   disabled?: boolean;
-  value?: "left" | "center" | "right";
-  onChange?: (align: "left" | "center" | "right") => void;
 }
+
+const ALIGN_OPTIONS: {
+  value: CellStyle["horizontalAlign"];
+  icon: string;
+}[] = [
+  {
+    value: "left",
+    icon: "material-symbols:format-align-left",
+  },
+  {
+    value: "center",
+    icon: "material-symbols:format-align-center",
+  },
+  {
+    value: "right",
+    icon: "material-symbols:format-align-right",
+  },
+];
 
 export default function HorizontalAlign({
   disabled = false,
-  value = "left",
-  onChange,
+  value,
+  updateCellStyle,
 }: HorizontalAlignProps) {
-  const icon =
-    value === "center"
-      ? "material-symbols:format-align-center"
-      : value === "right"
-        ? "material-symbols:format-align-right"
-        : "material-symbols:format-align-left";
+  const currentOption =
+    ALIGN_OPTIONS.find((option) => option.value === value) ?? ALIGN_OPTIONS[0];
 
   return (
     <Dropdown
       trigger={({ toggle, open }) => (
         <ToolbarButton disabled={disabled} open={open} onClick={toggle}>
-          <Icon icon={icon} />
+          <Icon icon={currentOption.icon} />
 
           <Icon
             icon="material-symbols:arrow-drop-down-rounded"
@@ -43,35 +58,20 @@ export default function HorizontalAlign({
     >
       {({ close }) => (
         <div className={cx("horizontal-align__dropdown")}>
-          <ToolbarButton
-            active={value === "left"}
-            onClick={() => {
-              onChange?.("left");
-              close();
-            }}
-          >
-            <Icon icon="material-symbols:format-align-left" />
-          </ToolbarButton>
-
-          <ToolbarButton
-            active={value === "center"}
-            onClick={() => {
-              onChange?.("center");
-              close();
-            }}
-          >
-            <Icon icon="material-symbols:format-align-center" />
-          </ToolbarButton>
-
-          <ToolbarButton
-            active={value === "right"}
-            onClick={() => {
-              onChange?.("right");
-              close();
-            }}
-          >
-            <Icon icon="material-symbols:format-align-right" />
-          </ToolbarButton>
+          {ALIGN_OPTIONS.map((option) => (
+            <ToolbarButton
+              key={option.value}
+              active={value === option.value}
+              onClick={() => {
+                updateCellStyle({
+                  horizontalAlign: option.value,
+                });
+                close();
+              }}
+            >
+              <Icon icon={option.icon} />
+            </ToolbarButton>
+          ))}
         </div>
       )}
     </Dropdown>

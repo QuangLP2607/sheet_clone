@@ -2,43 +2,38 @@ import { create } from "zustand";
 
 import type { JSONContent } from "@tiptap/core";
 
-import type { CellStyle } from "@/types/cell-style";
-
-import type { CellData, CellKey, InitialCellData } from "../model/cell";
+import type {
+  CellData,
+  CellKey,
+  InitialCellData,
+  CellStyle,
+  TextStyle,
+} from "@/features/spreadsheet/types";
 
 import {
   DEFAULT_CELL_CONTENT,
   DEFAULT_CELL_DATA,
   DEFAULT_CELL_STYLE,
-} from "../model/defaults";
-
-import { getCellKey } from "../utils/cellAddress";
+  DEFAULT_TEXT_STYLE,
+} from "@/features/spreadsheet/types";
 
 interface DataState {
-  /*
-   * Chỉ lưu những cell thực sự có data.
-   *
-   * Không tạo sẵn 1000 x 100 cell.
-   */
   cells: Record<CellKey, CellData>;
 
   initializeCells: (cells: Record<CellKey, InitialCellData>) => void;
 
-  getCell: (rowIndex: number, columnIndex: number) => CellData | undefined;
+  getCell: (cellKey: CellKey) => CellData | undefined;
 
-  setCellContent: (
-    rowIndex: number,
-    columnIndex: number,
-    content: JSONContent,
+  setCellContent: (cellKey: CellKey, content: JSONContent) => void;
+
+  updateCellTextStyle: (
+    cellKey: CellKey,
+    textStyle: Partial<TextStyle>,
   ) => void;
 
-  setCellStyle: (
-    rowIndex: number,
-    columnIndex: number,
-    style: Partial<CellStyle>,
-  ) => void;
+  setCellStyle: (cellKey: CellKey, style: Partial<CellStyle>) => void;
 
-  clearCell: (rowIndex: number, columnIndex: number) => void;
+  clearCell: (cellKey: CellKey) => void;
 
   clearAllCells: () => void;
 }
@@ -46,19 +41,19 @@ interface DataState {
 export const useDataStore = create<DataState>((set, get) => ({
   cells: {},
 
-  /*
-   * Backend / mock data
-   * → Zustand
-   */
   initializeCells: (cells) => {
     const initializedCells = Object.fromEntries(
-      Object.entries(cells).map(([key, cell]) => [
-        key,
-
+      Object.entries(cells).map(([cellKey, cell]) => [
+        cellKey,
         {
           ...DEFAULT_CELL_DATA,
 
           content: cell.content ?? DEFAULT_CELL_CONTENT,
+
+          textStyle: {
+            ...DEFAULT_TEXT_STYLE,
+            ...cell.textStyle,
+          },
 
           style: {
             ...DEFAULT_CELL_STYLE,
@@ -73,31 +68,19 @@ export const useDataStore = create<DataState>((set, get) => ({
     });
   },
 
-  /*
-   * Lấy cell.
-   *
-   * undefined nghĩa là cell chưa có data.
-   */
-  getCell: (rowIndex, columnIndex) => {
-    const key = getCellKey(rowIndex, columnIndex);
-
-    return get().cells[key];
+  getCell: (cellKey) => {
+    return get().cells[cellKey];
   },
 
-  /*
-   * Cập nhật content.
-   */
-  setCellContent: (rowIndex, columnIndex, content) => {
-    const key = getCellKey(rowIndex, columnIndex);
-
+  setCellContent: (cellKey, content) => {
     set((state) => {
-      const currentCell = state.cells[key] ?? DEFAULT_CELL_DATA;
+      const currentCell = state.cells[cellKey] ?? DEFAULT_CELL_DATA;
 
       return {
         cells: {
           ...state.cells,
 
-          [key]: {
+          [cellKey]: {
             ...currentCell,
             content,
           },
@@ -106,29 +89,42 @@ export const useDataStore = create<DataState>((set, get) => ({
     });
   },
 
-  /*
-   * Cập nhật style.
-   *
-   * Chỉ patch những property cần thay đổi.
-   */
-  setCellStyle: (rowIndex, columnIndex, style) => {
-    const key = getCellKey(rowIndex, columnIndex);
-
+  updateCellTextStyle: (cellKey, textStyle) => {
     set((state) => {
-      const currentCell = state.cells[key] ?? DEFAULT_CELL_DATA;
+      const currentCell = state.cells[cellKey] ?? DEFAULT_CELL_DATA;
 
       return {
         cells: {
           ...state.cells,
 
-          [key]: {
+          [cellKey]: {
+            ...currentCell,
+
+            textStyle: {
+              ...DEFAULT_TEXT_STYLE,
+              ...currentCell.textStyle,
+              ...textStyle,
+            },
+          },
+        },
+      };
+    });
+  },
+
+  setCellStyle: (cellKey, style) => {
+    set((state) => {
+      const currentCell = state.cells[cellKey] ?? DEFAULT_CELL_DATA;
+
+      return {
+        cells: {
+          ...state.cells,
+
+          [cellKey]: {
             ...currentCell,
 
             style: {
               ...DEFAULT_CELL_STYLE,
-
               ...currentCell.style,
-
               ...style,
             },
           },
@@ -137,24 +133,13 @@ export const useDataStore = create<DataState>((set, get) => ({
     });
   },
 
-  /*
-   * Xóa cell khỏi store.
-   *
-   * Sau khi xóa:
-   *
-   * cells[key] === undefined
-   *
-   * UI sẽ dùng DEFAULT_CELL_DATA khi cần.
-   */
-  clearCell: (rowIndex, columnIndex) => {
-    const key = getCellKey(rowIndex, columnIndex);
-
+  clearCell: (cellKey) => {
     set((state) => {
       const cells = {
         ...state.cells,
       };
 
-      delete cells[key];
+      delete cells[cellKey];
 
       return {
         cells,
@@ -162,9 +147,6 @@ export const useDataStore = create<DataState>((set, get) => ({
     });
   },
 
-  /*
-   * Dùng khi load workbook mới.
-   */
   clearAllCells: () => {
     set({
       cells: {},

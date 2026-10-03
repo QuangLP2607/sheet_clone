@@ -1,16 +1,18 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, type MouseEvent } from "react";
 
-import type { JSONContent } from "@tiptap/core";
-import type { Editor } from "@tiptap/react";
+import { useShallow } from "zustand/react/shallow";
 
-import { useShallow } from "zustand/shallow";
+import classNames from "classnames/bind";
 
 import Cell from "@/features/spreadsheet/components/Cell";
 
 import {
   DEFAULT_CELL_CONTENT,
   DEFAULT_CELL_STYLE,
-} from "@/features/spreadsheet/model/defaults";
+  DEFAULT_TEXT_STYLE,
+} from "@/features/spreadsheet/types";
+
+import type { CellKey } from "@/features/spreadsheet/types";
 
 import { useDataStore } from "@/features/spreadsheet/stores/dataStore";
 import { useSelectionStore } from "@/features/spreadsheet/stores/selectionStore";
@@ -18,114 +20,100 @@ import { useSelectionStore } from "@/features/spreadsheet/stores/selectionStore"
 import CellEditor from "./CellEditor";
 import CellValue from "./CellValue";
 
+import { getCellKey } from "../../../../utils/cellAddress";
+
 import styles from "./CellContainer.module.scss";
+
+const cx = classNames.bind(styles);
 
 interface CellContainerProps {
   rowIndex: number;
   columnIndex: number;
-
-  onCellSelect: (rowIndex: number, columnIndex: number) => void;
-
-  onCellDoubleClick: (rowIndex: number, columnIndex: number) => void;
-
-  onEditorReady: (editor: Editor) => void;
-
-  onEditorFocus: (editor: Editor) => void;
-
-  onFinishEditing: () => void;
 }
 
-function CellContainer({
-  rowIndex,
-  columnIndex,
-  onCellSelect,
-  onCellDoubleClick,
-  onEditorReady,
-  onEditorFocus,
-  onFinishEditing,
-}: CellContainerProps) {
-  const cellKey = `${rowIndex}:${columnIndex}` as `${number}:${number}`;
-
-  const { selected, editing } = useSelectionStore(
-    useShallow((state) => ({
-      selected:
-        state.activeCell?.rowIndex === rowIndex &&
-        state.activeCell?.columnIndex === columnIndex,
-
-      editing:
-        state.editingCell?.rowIndex === rowIndex &&
-        state.editingCell?.columnIndex === columnIndex,
-    })),
-  );
+function CellContainer({ rowIndex, columnIndex }: CellContainerProps) {
+  const cellKey = getCellKey(rowIndex, columnIndex) as CellKey;
 
   const cell = useDataStore((state) => state.cells[cellKey]);
 
-  const setCellContent = useDataStore((state) => state.setCellContent);
+  const { selected, editing } = useSelectionStore(
+    useShallow((state) => ({
+      selected: state.activeCellKey === cellKey,
 
-  const style = cell?.style ?? DEFAULT_CELL_STYLE;
+      editing:
+        state.editingCellKey === cellKey && state.editingTarget === "cell",
+    })),
+  );
+
+  const selectCell = useSelectionStore((state) => state.selectCell);
+
+  const startEditing = useSelectionStore((state) => state.startEditing);
 
   const content = cell?.content ?? DEFAULT_CELL_CONTENT;
 
-  const handleSelect = useCallback(() => {
-    onCellSelect(rowIndex, columnIndex);
-  }, [rowIndex, columnIndex, onCellSelect]);
+  const textStyle = cell?.textStyle ?? DEFAULT_TEXT_STYLE;
 
-  const handleDoubleClick = useCallback(() => {
-    onCellDoubleClick(rowIndex, columnIndex);
-  }, [rowIndex, columnIndex, onCellDoubleClick]);
+  const cellStyle = cell?.style ?? DEFAULT_CELL_STYLE;
 
-  const handleEditorReady = useCallback(
-    (editor: Editor) => {
-      onEditorReady(editor);
+  const handleClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      event.stopPropagation();
+
+      if (editing) return;
+
+      selectCell(cellKey);
     },
-    [onEditorReady],
+    [cellKey, editing, selectCell],
   );
 
-  const handleEditorFocus = useCallback(
-    (editor: Editor) => {
-      onEditorFocus(editor);
+  const handleDoubleClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      event.stopPropagation();
+
+      if (editing) return;
+
+      startEditing(cellKey, "cell");
     },
-    [onEditorFocus],
+    [cellKey, editing, startEditing],
   );
 
-  const handleCommit = useCallback(
-    (nextContent: JSONContent) => {
-      setCellContent(rowIndex, columnIndex, nextContent);
+  const handleEditorMouseDown = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      event.stopPropagation();
     },
-    [rowIndex, columnIndex, setCellContent],
+    [],
   );
 
   return (
-    <Cell
-      className={styles.cell}
-      style={style}
-      selected={selected}
-      editing={editing}
-      onSelect={handleSelect}
+    <div
+      className={cx("cellWrapper", {
+        selected,
+        editing,
+      })}
+      onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
-      {editing ? (
-        <div
-          className={styles.editor}
-          onMouseDown={(event) => {
-            event.stopPropagation();
-          }}
-        >
-          <CellEditor
-            content={content}
-            shouldFocus
-            onCommit={handleCommit}
-            onEditorReady={handleEditorReady}
-            onEditorFocus={handleEditorFocus}
-            onFinish={onFinishEditing}
-          />
-        </div>
-      ) : (
-        <div className={styles.value}>
-          <CellValue content={content} />
-        </div>
-      )}
-    </Cell>
+      <Cell
+        className={styles.cell}
+        style={cellStyle}
+        selected={selected}
+        editing={editing}
+      >
+        {editing ? (
+          <div className={styles.editor} onMouseDown={handleEditorMouseDown}>
+            <CellEditor
+              cellKey={cellKey}
+              content={content}
+              textStyle={textStyle}
+            />
+          </div>
+        ) : (
+          <div className={styles.value}>
+            <CellValue content={content} />
+          </div>
+        )}
+      </Cell>
+    </div>
   );
 }
 

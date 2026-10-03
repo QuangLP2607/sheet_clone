@@ -1,56 +1,94 @@
 import { create } from "zustand";
 
-export interface CellPosition {
-  rowIndex: number;
-  columnIndex: number;
-}
+import type { CellKey } from "@/features/spreadsheet/types";
+
+import { getCellKey } from "../utils/cellAddress";
+
+export type EditingTarget = "cell" | "formulaBar";
 
 interface SelectionState {
-  activeCell: CellPosition | null;
-  editingCell: CellPosition | null;
+  activeCellKey: CellKey | null;
 
-  selectCell: (rowIndex: number, columnIndex: number) => void;
-  startEditing: (rowIndex: number, columnIndex: number) => void;
+  editingCellKey: CellKey | null;
+  editingTarget: EditingTarget | null;
+
+  selectCell: (cellKey: CellKey) => void;
+
+  startEditing: (cellKey: CellKey, target?: EditingTarget) => void;
+
+  moveCell: (
+    rowIndex: number,
+    columnIndex: number,
+    rowDelta: number,
+    columnDelta: number,
+    totalRows: number,
+    totalCols: number,
+  ) => void;
+
   clearEditingCell: () => void;
   clearSelection: () => void;
 }
 
 export const useSelectionStore = create<SelectionState>((set) => ({
-  activeCell: null,
-  editingCell: null,
+  activeCellKey: null,
 
-  selectCell: (rowIndex, columnIndex) => {
+  editingCellKey: null,
+  editingTarget: null,
+
+  selectCell: (cellKey) => {
     set({
-      activeCell: {
-        rowIndex,
-        columnIndex,
-      },
-      editingCell: null,
+      activeCellKey: cellKey,
+      editingCellKey: null,
+      editingTarget: null,
     });
   },
 
-  startEditing: (rowIndex, columnIndex) => {
-    const cell = {
-      rowIndex,
-      columnIndex,
-    };
+  startEditing: (cellKey, target = "cell") => {
+    set({
+      activeCellKey: cellKey,
+      editingCellKey: cellKey,
+      editingTarget: target,
+    });
+  },
+
+  moveCell: (
+    rowIndex,
+    columnIndex,
+    rowDelta,
+    columnDelta,
+    totalRows,
+    totalCols,
+  ) => {
+    const nextRowIndex = Math.min(
+      totalRows - 1,
+      Math.max(0, rowIndex + rowDelta),
+    );
+
+    const nextColumnIndex = Math.min(
+      totalCols - 1,
+      Math.max(0, columnIndex + columnDelta),
+    );
 
     set({
-      activeCell: cell,
-      editingCell: cell,
+      activeCellKey: getCellKey(nextRowIndex, nextColumnIndex),
+
+      editingCellKey: null,
+      editingTarget: null,
     });
   },
 
   clearEditingCell: () => {
     set({
-      editingCell: null,
+      editingCellKey: null,
+      editingTarget: null,
     });
   },
 
   clearSelection: () => {
     set({
-      activeCell: null,
-      editingCell: null,
+      activeCellKey: null,
+      editingCellKey: null,
+      editingTarget: null,
     });
   },
 }));

@@ -4,7 +4,7 @@ import FillColor from "./components/FillColor";
 import Borders from "./components/Borders";
 import MergeCells from "./components/MergeCells";
 
-import type { CellStyle } from "@/types/cell-style";
+import type { CellStyle } from "@/features/spreadsheet/types";
 
 interface CellStyleGroupProps {
   cellStyle: CellStyle;
@@ -20,8 +20,8 @@ export default function CellStyleGroup({
   return (
     <ToolGroup mode={mode}>
       <FillColor
-        color={cellStyle.fillColor}
-        setColor={(color) => updateCellStyle({ fillColor: color })}
+        value={cellStyle.fillColor}
+        updateCellStyle={updateCellStyle}
       />
 
       <Borders />

@@ -2,28 +2,21 @@ import { Icon } from "@iconify/react";
 import classNames from "classnames/bind";
 
 import Dropdown from "@/components/Dropdown";
+import { type CellStyle } from "@/features/spreadsheet/types";
 import ToolbarButton from "../../../../base/ToolButton";
 
 import styles from "./TextRotation.module.scss";
 
 const cx = classNames.bind(styles);
 
-type TextRotationValue =
-  | "none"
-  | "angledown"
-  | "angleup"
-  | "rotate-up"
-  | "rotate-down"
-  | "vertical";
-
 interface TextRotationProps {
+  value: CellStyle["textRotation"];
+  updateCellStyle: (patch: Partial<CellStyle>) => void;
   disabled?: boolean;
-  value?: TextRotationValue;
-  onChange?: (rotation: TextRotationValue) => void;
 }
 
 const ROTATION_OPTIONS: {
-  value: TextRotationValue;
+  value: CellStyle["textRotation"];
   icon: string;
 }[] = [
   {
@@ -54,8 +47,8 @@ const ROTATION_OPTIONS: {
 
 export default function TextRotation({
   disabled = false,
-  value = "none",
-  onChange,
+  value,
+  updateCellStyle,
 }: TextRotationProps) {
   const currentOption =
     ROTATION_OPTIONS.find((option) => option.value === value) ??
@@ -83,7 +76,9 @@ export default function TextRotation({
               key={option.value}
               active={value === option.value}
               onClick={() => {
-                onChange?.(option.value);
+                updateCellStyle({
+                  textRotation: option.value,
+                });
                 close();
               }}
             >

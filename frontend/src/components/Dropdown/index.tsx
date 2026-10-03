@@ -91,10 +91,22 @@ export default function Dropdown({
 
     updatePosition();
 
+    const dropdown = dropdownRef.current;
+
+    const resizeObserver = new ResizeObserver(() => {
+      updatePosition();
+    });
+
+    if (dropdown) {
+      resizeObserver.observe(dropdown);
+    }
+
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition, true);
 
     return () => {
+      resizeObserver.disconnect();
+
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };

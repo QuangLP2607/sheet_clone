@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
-
 import type { UIEvent } from "react";
+
 import classNames from "classnames/bind";
 
 import styles from "./HorizontalScrollbar.module.scss";
@@ -20,9 +20,9 @@ const HorizontalScrollbar = forwardRef<
   return (
     <div ref={ref} className={cx("scrollbar", className)} onScroll={onScroll}>
       <div
+        className={cx("content")}
         style={{
           width: totalWidth,
-          height: 1,
         }}
       />
     </div>

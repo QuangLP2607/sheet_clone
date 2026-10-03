@@ -1,6 +1,7 @@
 import {
   useState,
   type ChangeEvent,
+  type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
@@ -9,6 +10,7 @@ import classNames from "classnames/bind";
 import { Icon } from "@iconify/react";
 
 import Dropdown from "@/components/Dropdown";
+import type { TextStyle } from "@/features/spreadsheet/types";
 
 import styles from "./FontSize.module.scss";
 
@@ -20,28 +22,27 @@ const MIN_FONT_SIZE = 1;
 const MAX_FONT_SIZE = 72;
 
 interface FontSizeProps {
-  value: number;
-  onChange: (fontSize: number) => void;
+  value: TextStyle["fontSize"];
+  updateTextStyle: (patch: Partial<TextStyle>) => void;
 }
 
 const preventEditorBlur = (event: MouseEvent<HTMLButtonElement>) => {
   event.preventDefault();
 };
 
-export default function FontSize({ value, onChange }: FontSizeProps) {
+export default function FontSize({ value, updateTextStyle }: FontSizeProps) {
   const [inputValue, setInputValue] = useState<string | null>(null);
 
   const displayValue = inputValue !== null ? inputValue : String(value);
 
   const applyFontSize = (size: number) => {
     const nextSize = Math.min(Math.max(size, MIN_FONT_SIZE), MAX_FONT_SIZE);
-
     setInputValue(null);
-    onChange(nextSize);
+    updateTextStyle({ fontSize: nextSize });
   };
 
   const handleInputFocus = (
-    event: React.FocusEvent<HTMLInputElement>,
+    event: FocusEvent<HTMLInputElement>,
     open: boolean,
     toggle: () => void,
   ) => {

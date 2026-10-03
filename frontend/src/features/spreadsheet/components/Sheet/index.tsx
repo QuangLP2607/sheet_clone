@@ -1,28 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { Editor } from "@tiptap/react";
 import { VariableSizeGrid as Grid } from "react-window";
 
 import classNames from "classnames/bind";
 
 import Toolbar from "../Toolbar";
+import FormulaBar from "../FormulaBar";
 
-import FormulaBar from "@/features/spreadsheet/components/FormulaBar";
+import { useSheetKeyboard } from "./keyboard/useSheetKeyboard";
 
-import type { CellStyle } from "@/types/cell-style";
+import type { CellStyle } from "@/features/spreadsheet/types";
 
 import {
   DEFAULT_CELL_STYLE,
   HEADER_COL_WIDTH,
   HEADER_ROW_HEIGHT,
-  SCROLLBAR_SIZE,
   TOTAL_COLS,
   TOTAL_ROWS,
-} from "../../model/defaults";
+} from "@/features/spreadsheet/types";
 
-import { useDataStore } from "../../stores/dataStore";
-import { useSelectionStore } from "../../stores/selectionStore";
-import { useSizeStore } from "../../stores/sizeStore";
+import { useDataStore } from "@/features/spreadsheet/stores/dataStore";
+import { useSelectionStore } from "@/features/spreadsheet/stores/selectionStore";
+import { useSizeStore } from "@/features/spreadsheet/stores/sizeStore";
+
+import { useActiveTextStyle } from "./hooks/useActiveTextStyle";
 
 import CellsGrid from "./components/CellsGrid";
 
@@ -33,6 +34,8 @@ import {
   VerticalScrollbar,
 } from "./components/Scrollbars";
 
+import { EditingEditorProvider } from "../../providers/EditingEditor";
+
 import { useSheetScroll } from "./hooks/useSheetScroll";
 import { useTouchPan } from "./hooks/useTouchPan";
 
@@ -40,108 +43,123 @@ import styles from "./Sheet.module.scss";
 
 const cx = classNames.bind(styles);
 
-const VIEWPORT_GAP = 4;
-
 interface Size {
   width: number;
   height: number;
 }
 
 export default function Sheet() {
+  return (
+    <EditingEditorProvider>
+      <SheetContent />
+    </EditingEditorProvider>
+  );
+}
+
+function SheetContent() {
+  /* ==================================================
+   * Refs
+   * ================================================== */
+
   const viewportRef = useRef<HTMLDivElement>(null);
 
+  const sheetRef = useRef<HTMLDivElement>(null);
+
   const bodyGridRef = useRef<Grid>(null);
+
   const rowHeaderRef = useRef<Grid>(null);
+
   const columnHeaderRef = useRef<Grid>(null);
 
   const horizontalScrollbarRef = useRef<HTMLDivElement>(null);
+
   const verticalScrollbarRef = useRef<HTMLDivElement>(null);
 
-  const [size, setSize] = useState<Size>({
+  /* ==================================================
+   * Keyboard
+   * ================================================== */
+
+  useSheetKeyboard({
+    totalRows: TOTAL_ROWS,
+    totalCols: TOTAL_COLS,
+  });
+
+  /* ==================================================
+   * Selection
+   * ================================================== */
+
+  const activeCellKey = useSelectionStore((state) => state.activeCellKey);
+
+  /* ==================================================
+   * Active cell
+   * ================================================== */
+
+  const activeCell = useDataStore((state) =>
+    activeCellKey ? state.cells[activeCellKey] : undefined,
+  );
+
+  const cellStyle = activeCell?.style ?? DEFAULT_CELL_STYLE;
+
+  /* ==================================================
+   * Toolbar - TextStyle
+   * ================================================== */
+
+  const { textStyle, updateTextStyle } = useActiveTextStyle();
+
+  /* ==================================================
+   * Toolbar - CellStyle
+   * ================================================== */
+
+  const setCellStyle = useDataStore((state) => state.setCellStyle);
+
+  const updateCellStyle = useCallback(
+    (patch: Partial<CellStyle>) => {
+      if (!activeCellKey) {
+        return;
+      }
+
+      setCellStyle(activeCellKey, patch);
+    },
+    [activeCellKey, setCellStyle],
+  );
+
+  /* ==================================================
+   * Sheet size
+   * ================================================== */
+
+  const [sheetSize, setSheetSize] = useState<Size>({
     width: 0,
     height: 0,
   });
 
-  /**
-   * Editor hiện tại mà Toolbar điều khiển.
-   *
-   * Có thể là:
-   * - CellEditor
-   * - FormulaBar editor
-   */
-  const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
-
-  const [zoom, setZoom] = useState(100);
-
-  /*
-   * ==================================================
-   * Selection
-   * ==================================================
-   */
-
-  const activeCell = useSelectionStore((state) => state.activeCell);
-  const editingCell = useSelectionStore((state) => state.editingCell);
-
-  const selectCell = useSelectionStore((state) => state.selectCell);
-  const startEditing = useSelectionStore((state) => state.startEditing);
-  const clearEditingCell = useSelectionStore((state) => state.clearEditingCell);
-
-  /*
-   * ==================================================
-   * Active cell key
-   * ==================================================
-   */
-
-  const activeCellKey = activeCell
-    ? (`${activeCell.rowIndex}:${activeCell.columnIndex}` as `${number}:${number}`)
-    : null;
-
-  /*
-   * ==================================================
-   * Cell style
-   * ==================================================
-   */
-
-  const setCellStyle = useDataStore((state) => state.setCellStyle);
-
-  const cellStyle = useDataStore((state) => {
-    if (!activeCellKey) {
-      return DEFAULT_CELL_STYLE;
-    }
-
-    return state.cells[activeCellKey]?.style ?? DEFAULT_CELL_STYLE;
-  });
-
-  /*
-   * ==================================================
-   * Viewport size
-   * ==================================================
-   */
-
   useEffect(() => {
-    const element = viewportRef.current;
+    const element = sheetRef.current;
 
     if (!element) {
       return;
     }
 
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
+    const updateSheetSize = () => {
+      const rect = element.getBoundingClientRect();
 
-      const nextWidth = Math.max(0, Math.floor(width));
-      const nextHeight = Math.max(0, Math.floor(height));
+      const width = Math.max(0, Math.floor(rect.width));
+      const height = Math.max(0, Math.floor(rect.height));
 
-      setSize((previous) => {
-        if (previous.width === nextWidth && previous.height === nextHeight) {
+      setSheetSize((previous) => {
+        if (previous.width === width && previous.height === height) {
           return previous;
         }
 
         return {
-          width: nextWidth,
-          height: nextHeight,
+          width,
+          height,
         };
       });
-    });
+    };
+
+    updateSheetSize();
+
+    const observer = new ResizeObserver(updateSheetSize);
 
     observer.observe(element);
 
@@ -150,91 +168,22 @@ export default function Sheet() {
     };
   }, []);
 
-  /*
-   * ==================================================
-   * Cell select
-   * ==================================================
-   */
+  /* ==================================================
+   * Initialize sizes
+   * ================================================== */
 
-  const handleCellSelect = useCallback(
-    (rowIndex: number, columnIndex: number) => {
-      selectCell(rowIndex, columnIndex);
+  const initializeSizes = useSizeStore((state) => state.initializeSizes);
 
-      /*
-       * Cell mới được select:
-       * Toolbar không còn điều khiển editor cũ.
-       */
-      setActiveEditor(null);
-    },
-    [selectCell],
-  );
+  useEffect(() => {
+    initializeSizes({
+      totalRows: TOTAL_ROWS,
+      totalCols: TOTAL_COLS,
+    });
+  }, [initializeSizes]);
 
-  /*
-   * ==================================================
-   * Cell double click
-   * ==================================================
-   */
-
-  const handleCellDoubleClick = useCallback(
-    (rowIndex: number, columnIndex: number) => {
-      startEditing(rowIndex, columnIndex);
-    },
-    [startEditing],
-  );
-
-  /*
-   * ==================================================
-   * CellEditor ready
-   * ==================================================
-   */
-
-  const handleEditorReady = useCallback((editor: Editor) => {
-    setActiveEditor(editor);
-  }, []);
-
-  /*
-   * ==================================================
-   * Editor focus
-   * ==================================================
-   */
-
-  const handleEditorFocus = useCallback((editor: Editor) => {
-    setActiveEditor(editor);
-  }, []);
-
-  /*
-   * ==================================================
-   * Finish editing
-   * ==================================================
-   */
-
-  const handleFinishEditing = useCallback(() => {
-    clearEditingCell();
-    setActiveEditor(null);
-  }, [clearEditingCell]);
-
-  /*
-   * ==================================================
-   * Cell style
-   * ==================================================
-   */
-
-  const updateCellStyle = useCallback(
-    (patch: Partial<CellStyle>) => {
-      if (!activeCell) {
-        return;
-      }
-
-      setCellStyle(activeCell.rowIndex, activeCell.columnIndex, patch);
-    },
-    [activeCell, setCellStyle],
-  );
-
-  /*
-   * ==================================================
+  /* ==================================================
    * Resize
-   * ==================================================
-   */
+   * ================================================== */
 
   const setColumnWidth = useSizeStore((state) => state.setColumnWidth);
 
@@ -262,32 +211,153 @@ export default function Sheet() {
     [setRowHeight],
   );
 
-  /*
-   * ==================================================
-   * Total size
-   * ==================================================
-   */
+  /* ==================================================
+   * Resize preview
+   * ================================================== */
 
-  const getTotalWidth = useSizeStore((state) => state.getTotalWidth);
+  const [resizePreviewX, setResizePreviewX] = useState<number | null>(null);
 
-  const getTotalHeight = useSizeStore((state) => state.getTotalHeight);
+  const [resizePreviewY, setResizePreviewY] = useState<number | null>(null);
 
-  const totalWidth = getTotalWidth(TOTAL_COLS);
-  const totalHeight = getTotalHeight(TOTAL_ROWS);
+  const resizeXFrameRef = useRef<number | null>(null);
 
-  const sheetWidth = Math.max(0, size.width - SCROLLBAR_SIZE - VIEWPORT_GAP);
+  const resizeYFrameRef = useRef<number | null>(null);
 
-  const sheetHeight = Math.max(0, size.height - SCROLLBAR_SIZE - VIEWPORT_GAP);
+  const pendingResizeXRef = useRef<number | null>(null);
 
-  const bodyWidth = Math.max(0, sheetWidth - HEADER_COL_WIDTH);
+  const pendingResizeYRef = useRef<number | null>(null);
 
-  const bodyHeight = Math.max(0, sheetHeight - HEADER_ROW_HEIGHT);
+  /* ==================================================
+   * Column resize preview
+   * ================================================== */
 
-  /*
-   * ==================================================
+  const handleColumnResizePreview = useCallback((clientX: number) => {
+    const viewport = viewportRef.current;
+
+    if (!viewport) {
+      return;
+    }
+
+    const viewportRect = viewport.getBoundingClientRect();
+
+    pendingResizeXRef.current = clientX - viewportRect.left;
+
+    if (resizeXFrameRef.current !== null) {
+      return;
+    }
+
+    resizeXFrameRef.current = requestAnimationFrame(() => {
+      resizeXFrameRef.current = null;
+
+      const x = pendingResizeXRef.current;
+
+      if (x === null) {
+        return;
+      }
+
+      setResizePreviewX(x);
+    });
+  }, []);
+
+  /* ==================================================
+   * Row resize preview
+   * ================================================== */
+
+  const handleRowResizePreview = useCallback((clientY: number) => {
+    const viewport = viewportRef.current;
+
+    if (!viewport) {
+      return;
+    }
+
+    const viewportRect = viewport.getBoundingClientRect();
+
+    pendingResizeYRef.current = clientY - viewportRect.top;
+
+    if (resizeYFrameRef.current !== null) {
+      return;
+    }
+
+    resizeYFrameRef.current = requestAnimationFrame(() => {
+      resizeYFrameRef.current = null;
+
+      const y = pendingResizeYRef.current;
+
+      if (y === null) {
+        return;
+      }
+
+      setResizePreviewY(y);
+    });
+  }, []);
+
+  /* ==================================================
+   * Column resize end
+   * ================================================== */
+
+  const handleColumnResizeEnd = useCallback(() => {
+    if (resizeXFrameRef.current !== null) {
+      cancelAnimationFrame(resizeXFrameRef.current);
+
+      resizeXFrameRef.current = null;
+    }
+
+    pendingResizeXRef.current = null;
+
+    setResizePreviewX(null);
+  }, []);
+
+  /* ==================================================
+   * Row resize end
+   * ================================================== */
+
+  const handleRowResizeEnd = useCallback(() => {
+    if (resizeYFrameRef.current !== null) {
+      cancelAnimationFrame(resizeYFrameRef.current);
+
+      resizeYFrameRef.current = null;
+    }
+
+    pendingResizeYRef.current = null;
+
+    setResizePreviewY(null);
+  }, []);
+
+  /* ==================================================
+   * Cleanup resize animation frames
+   * ================================================== */
+
+  useEffect(() => {
+    return () => {
+      if (resizeXFrameRef.current !== null) {
+        cancelAnimationFrame(resizeXFrameRef.current);
+      }
+
+      if (resizeYFrameRef.current !== null) {
+        cancelAnimationFrame(resizeYFrameRef.current);
+      }
+    };
+  }, []);
+
+  /* ==================================================
+   * Total sheet size
+   * ================================================== */
+
+  const totalWidth = useSizeStore((state) => state.totalWidth);
+
+  const totalHeight = useSizeStore((state) => state.totalHeight);
+
+  /* ==================================================
+   * Body size
+   * ================================================== */
+
+  const bodyWidth = Math.max(0, sheetSize.width - HEADER_COL_WIDTH);
+
+  const bodyHeight = Math.max(0, sheetSize.height - HEADER_ROW_HEIGHT);
+
+  /* ==================================================
    * Scroll
-   * ==================================================
-   */
+   * ================================================== */
 
   const {
     handleHorizontalScroll,
@@ -302,85 +372,108 @@ export default function Sheet() {
     verticalScrollbarRef,
   });
 
+  /* ==================================================
+   * Touch
+   * ================================================== */
+
   useTouchPan({
     targetRef: viewportRef,
     scrollBy,
   });
 
+  /* ==================================================
+   * Render
+   * ================================================== */
+
   return (
     <div className={cx("wrapper")}>
       <div className={cx("toolbar")}>
         <Toolbar
-          editing={editingCell !== null}
-          cellKey={activeCellKey}
-          editor={activeEditor}
+          textStyle={textStyle}
           cellStyle={cellStyle}
+          updateTextStyle={updateTextStyle}
           updateCellStyle={updateCellStyle}
-          zoom={zoom}
-          setZoom={setZoom}
+          zoom={100}
+          setZoom={() => {}}
         />
       </div>
 
-      <FormulaBar onEditorFocus={handleEditorFocus} />
+      <FormulaBar />
 
       <div ref={viewportRef} className={cx("viewport")}>
-        {size.width > 0 && size.height > 0 && (
-          <>
-            <div className={cx("sheet")} onWheel={handleWheel}>
-              <div className={cx("top-bar")}>
-                <CornerCell
-                  width={HEADER_COL_WIDTH}
-                  height={HEADER_ROW_HEIGHT}
-                />
-
-                <ColumnHeaders
-                  ref={columnHeaderRef}
-                  totalCols={TOTAL_COLS}
-                  width={bodyWidth}
-                  height={HEADER_ROW_HEIGHT}
-                  onColumnResize={handleColumnResize}
-                />
-              </div>
-
-              <div className={cx("main-body")}>
-                <RowHeaders
-                  ref={rowHeaderRef}
-                  totalRows={TOTAL_ROWS}
-                  width={HEADER_COL_WIDTH}
-                  height={bodyHeight}
-                  onRowResize={handleRowResize}
-                />
-
-                <CellsGrid
-                  ref={bodyGridRef}
-                  totalRows={TOTAL_ROWS}
-                  totalCols={TOTAL_COLS}
-                  width={bodyWidth}
-                  height={bodyHeight}
-                  onCellSelect={handleCellSelect}
-                  onCellDoubleClick={handleCellDoubleClick}
-                  onEditorReady={handleEditorReady}
-                  onEditorFocus={handleEditorFocus}
-                  onFinishEditing={handleFinishEditing}
-                />
-              </div>
-            </div>
-
-            <VerticalScrollbar
-              ref={verticalScrollbarRef}
-              className={cx("y-driver")}
-              totalHeight={totalHeight + HEADER_ROW_HEIGHT}
-              onScroll={handleVerticalScroll}
-            />
-
-            <HorizontalScrollbar
-              ref={horizontalScrollbarRef}
-              className={cx("x-driver")}
-              totalWidth={totalWidth + HEADER_COL_WIDTH}
-              onScroll={handleHorizontalScroll}
-            />
-          </>
+        {/* Column resize preview */}
+        {resizePreviewX !== null && (
+          <div
+            className={cx("resize-preview-line", "resize-preview-line--x")}
+            style={{
+              left: resizePreviewX,
+              height: sheetSize.height,
+            }}
+          />
         )}
+
+        {/* Row resize preview */}
+        {resizePreviewY !== null && (
+          <div
+            className={cx("resize-preview-line", "resize-preview-line--y")}
+            style={{
+              top: resizePreviewY,
+              width: sheetSize.width,
+            }}
+          />
+        )}
+
+        <div ref={sheetRef} className={cx("sheet")} onWheel={handleWheel}>
+          <div className={cx("top-bar")}>
+            <CornerCell width={HEADER_COL_WIDTH} height={HEADER_ROW_HEIGHT} />
+
+            <ColumnHeaders
+              ref={columnHeaderRef}
+              totalCols={TOTAL_COLS}
+              width={bodyWidth}
+              height={HEADER_ROW_HEIGHT}
+              onColumnResize={handleColumnResize}
+              onResizePreview={handleColumnResizePreview}
+              onResizeEnd={handleColumnResizeEnd}
+            />
+          </div>
+
+          <div className={cx("main-body")}>
+            <RowHeaders
+              ref={rowHeaderRef}
+              totalRows={TOTAL_ROWS}
+              width={HEADER_COL_WIDTH}
+              height={bodyHeight}
+              onRowResize={handleRowResize}
+              onResizePreview={handleRowResizePreview}
+              onResizeEnd={handleRowResizeEnd}
+            />
+
+            <CellsGrid
+              ref={bodyGridRef}
+              totalRows={TOTAL_ROWS}
+              totalCols={TOTAL_COLS}
+              width={bodyWidth}
+              height={bodyHeight}
+            />
+          </div>
+        </div>
+
+        <VerticalScrollbar
+          ref={verticalScrollbarRef}
+          className={cx("y-driver")}
+          totalHeight={totalHeight + HEADER_ROW_HEIGHT}
+          onScroll={handleVerticalScroll}
+        />
+
+        <HorizontalScrollbar
+          ref={horizontalScrollbarRef}
+          className={cx("x-driver")}
+          totalWidth={totalWidth + HEADER_COL_WIDTH}
+          onScroll={handleHorizontalScroll}
+        />
+
+        <div className={cx("corner")} />
       </div>
     </div>
   );

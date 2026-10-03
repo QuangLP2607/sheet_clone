@@ -1,6 +1,10 @@
 import classNames from "classnames/bind";
 import { Icon } from "@iconify/react";
 
+import {
+  type CellStyle,
+  DEFAULT_CELL_STYLE,
+} from "@/features/spreadsheet/types";
 import ToolbarButton from "../../../../base/ToolButton";
 import ColorPicker from "@/components/ColorPicker";
 
@@ -8,25 +12,17 @@ import styles from "./FillColor.module.scss";
 
 const cx = classNames.bind(styles);
 
-const DEFAULT_FILL_COLOR = "#ffffff";
-
 interface FillColorProps {
-  color: string | null;
-  setColor: (color: string | null) => void;
+  value: CellStyle["fillColor"];
+  updateCellStyle: (patch: Partial<CellStyle>) => void;
 }
 
-export default function FillColor({ color, setColor }: FillColorProps) {
-  const displayColor = color ?? DEFAULT_FILL_COLOR;
-
-  const handleColorChange = (nextColor: string) => {
-    setColor(nextColor === DEFAULT_FILL_COLOR ? null : nextColor);
-  };
-
+export default function FillColor({ value, updateCellStyle }: FillColorProps) {
   return (
     <ColorPicker
-      value={displayColor}
-      resetColor={DEFAULT_FILL_COLOR}
-      onChange={handleColorChange}
+      value={value}
+      resetColor={DEFAULT_CELL_STYLE.fillColor}
+      onChange={(color) => updateCellStyle({ fillColor: color })}
     >
       {({ open }) => (
         <ToolbarButton className={cx("fill-color__button")} open={open}>
@@ -37,9 +33,7 @@ export default function FillColor({ color, setColor }: FillColorProps) {
 
           <span
             className={cx("fill-color__indicator")}
-            style={{
-              backgroundColor: displayColor,
-            }}
+            style={{ backgroundColor: value }}
           />
         </ToolbarButton>
       )}

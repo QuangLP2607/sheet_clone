@@ -7,7 +7,6 @@ import Dropdown from "@/components/Dropdown";
 
 import { FONT_FAMILIES } from "./constants";
 import { useLoadFont } from "./hooks/useLoadFont";
-
 import type { FontMetadataMap } from "./types";
 
 import metadata from "@/fonts/metadata.json";
@@ -17,8 +16,8 @@ import styles from "./FontPicker.module.scss";
 const cx = classNames.bind(styles);
 
 interface FontPickerProps {
-  value: string | null;
-  onChange: (fontFamily: string | null) => void;
+  value: string;
+  onChange: (fontFamily: string) => void;
   defaultFont?: string;
 }
 
@@ -75,7 +74,6 @@ export default function FontPicker({
   defaultFont,
 }: FontPickerProps) {
   const [recentFonts, setRecentFonts] = useState<string[]>(getRecentFonts);
-
   const [loadingFont, setLoadingFont] = useState<string | null>(null);
 
   const { loadFont } = useLoadFont();
@@ -84,15 +82,8 @@ export default function FontPicker({
     localStorage.setItem(RECENT_FONTS_KEY, JSON.stringify(recentFonts));
   }, [recentFonts]);
 
-  const handleSelect = async (fontFamily: string | null, close: () => void) => {
+  const handleSelect = async (fontFamily: string, close: () => void) => {
     if (fontFamily === value) {
-      close();
-      return;
-    }
-
-    // null = Theme / Default
-    if (fontFamily === null) {
-      onChange(null);
       close();
       return;
     }
@@ -128,7 +119,6 @@ export default function FontPicker({
   const renderFontOption = (fontFamily: string, close: () => void) => {
     const active = fontFamily === value;
     const loading = loadingFont === fontFamily;
-
     const isGoogleFont = Boolean((metadata as FontMetadataMap)[fontFamily]);
 
     return (
@@ -160,10 +150,8 @@ export default function FontPicker({
     );
   };
 
-  const displayValue =
-    value !== null ? value : defaultFont ? `Default (${defaultFont})` : "";
-
-  const displayFontFamily = value ?? defaultFont ?? undefined;
+  const displayValue = value || defaultFont || "";
+  const displayFontFamily = value || defaultFont || undefined;
 
   return (
     <Dropdown
@@ -196,37 +184,6 @@ export default function FontPicker({
     >
       {({ close }) => (
         <div className={cx("font-picker__popover")}>
-          {/* Theme */}
-          <section className={cx("font-picker__section")}>
-            <span className={cx("font-picker__section-title")}>Theme</span>
-
-            <button
-              type="button"
-              className={cx("font-picker__option", {
-                "font-picker__option--active": value === null,
-              })}
-              onMouseDown={preventEditorBlur}
-              onClick={() => handleSelect(null, close)}
-            >
-              <span
-                className={cx("font-picker__preview")}
-                style={{
-                  fontFamily: defaultFont ?? "Arial",
-                }}
-              >
-                {defaultFont ? `Default (${defaultFont})` : "Default"}
-              </span>
-
-              {value === null && (
-                <Icon
-                  icon="material-symbols:check"
-                  className={cx("font-picker__check")}
-                />
-              )}
-            </button>
-          </section>
-
-          {/* Recent */}
           {recentFonts.length > 0 && (
             <>
               <div className={cx("font-picker__divider")} />
@@ -243,7 +200,6 @@ export default function FontPicker({
 
           <div className={cx("font-picker__divider")} />
 
-          {/* All fonts */}
           <div className={cx("font-picker__list")}>
             {FONT_FAMILIES.map((fontFamily) =>
               renderFontOption(fontFamily, close),

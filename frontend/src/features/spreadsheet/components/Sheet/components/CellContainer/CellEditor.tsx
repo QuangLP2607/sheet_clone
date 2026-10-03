@@ -1,78 +1,78 @@
 import { useEffect } from "react";
 
 import type { JSONContent } from "@tiptap/core";
-import type { Editor } from "@tiptap/react";
 
 import RichTextEditor from "@/features/spreadsheet/components/RichTextEditor";
+
 import { useRichTextEditor } from "@/features/spreadsheet/components/RichTextEditor/hooks";
 
+import { useEditingEditor } from "@/features/spreadsheet/providers/EditingEditor";
+
+import type { CellKey, TextStyle } from "@/features/spreadsheet/types";
+
 interface CellEditorProps {
+  cellKey: CellKey;
+
   content: JSONContent;
-  shouldFocus: boolean;
 
-  onCommit: (content: JSONContent) => void;
-
-  onEditorReady: (editor: Editor) => void;
-
-  onEditorFocus: (editor: Editor) => void;
-
-  onFinish: () => void;
+  textStyle: TextStyle;
 }
 
 export default function CellEditor({
+  cellKey,
   content,
-  shouldFocus,
-  onCommit,
-  onEditorReady,
-  onEditorFocus,
-  onFinish,
+  textStyle,
 }: CellEditorProps) {
-  const editor = useRichTextEditor(content);
+  const {
+    setEditor,
+
+    setEditorReady,
+
+    setDraftContent,
+
+    commitEditorContent,
+  } = useEditingEditor();
+
+  const editor = useRichTextEditor({
+    content,
+
+    initialTextStyle: textStyle,
+
+    editable: true,
+
+    autoFocus: true,
+
+    onReady: () => {
+      setEditorReady(true);
+    },
+  });
 
   /*
-   * ==================================================
-   * Editor ready
-   * ==================================================
+   * Register Cell Editor.
    */
   useEffect(() => {
     if (!editor) {
       return;
     }
 
-    onEditorReady(editor);
-  }, [editor, onEditorReady]);
-
-  /*
-   * ==================================================
-   * CellEditor focus
-   * ==================================================
-   *
-   * Chỉ CellEditor mới tự focus khi
-   * shouldFocus = true.
-   */
-  useEffect(() => {
-    if (!editor || !shouldFocus) {
-      return;
-    }
-
-    const frame = requestAnimationFrame(() => {
-      editor.commands.focus("end");
-
-      onEditorFocus(editor);
-    });
+    setEditor(editor, cellKey);
 
     return () => {
-      cancelAnimationFrame(frame);
+      /*
+       * Cell editing kết thúc.
+       *
+       * Commit draft → dataStore.
+       */
+      commitEditorContent();
+
+      setEditor(null);
     };
-  }, [editor, shouldFocus, onEditorFocus]);
+  }, [editor, cellKey, setEditor, commitEditorContent]);
 
   /*
-   * ==================================================
-   * CellEditor → dataStore
-   * ==================================================
+   * Cell Editor → draft.
    *
-   * Gõ / format trong CellEditor
-   * → content trong dataStore thay đổi.
+   * Không update dataStore.
    */
   useEffect(() => {
     if (!editor) {
@@ -80,7 +80,7 @@ export default function CellEditor({
     }
 
     const handleUpdate = () => {
-      onCommit(editor.getJSON());
+      setDraftContent(editor.getJSON());
     };
 
     editor.on("update", handleUpdate);
@@ -88,78 +88,11 @@ export default function CellEditor({
     return () => {
       editor.off("update", handleUpdate);
     };
-  }, [editor, onCommit]);
-
-  /*
-   * ==================================================
-   * dataStore → CellEditor
-   * ==================================================
-   *
-   * FormulaBar thay đổi content
-   * → CellEditor nhận content mới.
-   *
-   * emitUpdate = false
-   * để không tạo vòng lặp.
-   */
-  useEffect(() => {
-    if (!editor) {
-      return;
-    }
-
-    const currentContent = editor.getJSON();
-
-    if (JSON.stringify(currentContent) === JSON.stringify(content)) {
-      return;
-    }
-
-    editor.commands.setContent(content, {
-      emitUpdate: false,
-    });
-  }, [editor, content]);
-
-  /*
-   * ==================================================
-   * Keyboard
-   * ==================================================
-   */
-
-  useEffect(() => {
-    if (!editor) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-
-        onFinish();
-
-        return;
-      }
-
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-
-        onFinish();
-      }
-    };
-
-    editor.view.dom.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      editor.view.dom.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [editor, onFinish]);
-
-  /*
-   * ==================================================
-   * Render
-   * ==================================================
-   */
+  }, [editor, setDraftContent]);
 
   if (!editor) {
     return null;
   }
 
-  return <RichTextEditor editor={editor} onFocus={onEditorFocus} />;
+  return <RichTextEditor editor={editor} />;
 }
