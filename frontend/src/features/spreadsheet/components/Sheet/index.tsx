@@ -26,6 +26,7 @@ import { useSizeStore } from "@/features/spreadsheet/stores/sizeStore";
 import { useActiveTextStyle } from "./hooks/useActiveTextStyle";
 
 import CellsGrid from "./components/CellsGrid";
+import CellEditorOverlay from "./components/CellEditorOverlay";
 
 import { ColumnHeaders, CornerCell, RowHeaders } from "./components/Headers";
 
@@ -75,6 +76,41 @@ function SheetContent() {
 
   const verticalScrollbarRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Listener của CellEditorOverlay.
+   *
+   * Sheet chỉ đóng vai trò trung gian truyền event
+   * từ useSheetScroll xuống editor.
+   *
+   * Không lưu UI state của editor ở đây.
+   */
+  const viewMoveListenerRef = useRef<(() => void) | null>(null);
+
+  /**
+   * Đăng ký / huỷ listener của CellEditorOverlay.
+   */
+  const registerViewMoveListener = useCallback(
+    (listener: (() => void) | null) => {
+      viewMoveListenerRef.current = listener;
+    },
+    [],
+  );
+
+  /**
+   * Callback được truyền vào useSheetScroll.
+   *
+   * Khi viewport thực sự di chuyển:
+   *
+   * useSheetScroll
+   *      ↓
+   * handleViewMove
+   *      ↓
+   * CellEditorOverlay listener
+   */
+  const handleViewMove = useCallback(() => {
+    viewMoveListenerRef.current?.();
+  }, []);
+
   /* ==================================================
    * Keyboard
    * ================================================== */
@@ -89,6 +125,14 @@ function SheetContent() {
    * ================================================== */
 
   const activeCellKey = useSelectionStore((state) => state.activeCellKey);
+
+  /**
+   * Subscribe trực tiếp để key của CellEditorOverlay
+   * thay đổi khi chuyển sang cell khác.
+   *
+   * Không dùng useSelectionStore.getState() trong JSX.
+   */
+  const editingCellKey = useSelectionStore((state) => state.editingCellKey);
 
   /* ==================================================
    * Active cell
@@ -143,6 +187,7 @@ function SheetContent() {
       const rect = element.getBoundingClientRect();
 
       const width = Math.max(0, Math.floor(rect.width));
+
       const height = Math.max(0, Math.floor(rect.height));
 
       setSheetSize((previous) => {
@@ -370,6 +415,7 @@ function SheetContent() {
     columnHeaderRef,
     horizontalScrollbarRef,
     verticalScrollbarRef,
+    onViewMove: handleViewMove,
   });
 
   /* ==================================================
@@ -458,6 +504,27 @@ function SheetContent() {
             />
           </div>
         </div>
+
+        {/* ==================================================
+         * Cell editor overlay
+         *
+         * Editor nằm ngoài react-window.
+         *
+         * key={editingCellKey} đảm bảo:
+         *
+         * A1 -> B2
+         *
+         * Editor instance được tạo lại.
+         *
+         * Vì vậy showAddress tự động trở về false.
+         * Không cần reset state thủ công.
+         * ================================================== */}
+        <CellEditorOverlay
+          key={editingCellKey ?? "none"}
+          viewportRef={viewportRef}
+          onWheel={handleWheel}
+          registerViewMoveListener={registerViewMoveListener}
+        />
 
         <VerticalScrollbar
           ref={verticalScrollbarRef}

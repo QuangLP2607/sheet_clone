@@ -2,7 +2,10 @@ import type { CSSProperties, ReactNode } from "react";
 
 import classNames from "classnames/bind";
 
-import type { CellStyle } from "@/features/spreadsheet/types";
+import {
+  DEFAULT_CELL_STYLE,
+  type CellStyle,
+} from "@/features/spreadsheet/types";
 
 import styles from "./Cell.module.scss";
 
@@ -12,7 +15,7 @@ interface CellProps {
   children?: ReactNode;
   className?: string;
 
-  style: CellStyle;
+  style?: Partial<CellStyle>;
 
   selected?: boolean;
   editing?: boolean;
@@ -30,26 +33,31 @@ export default function Cell({
   onSelect,
   onDoubleClick,
 }: CellProps) {
-  const cellStyle: CSSProperties = {
-    backgroundColor: style.fillColor,
+  const cellStyle: CellStyle = {
+    ...DEFAULT_CELL_STYLE,
+    ...style,
+  };
 
-    textAlign: style.horizontalAlign,
+  const cssStyle: CSSProperties = {
+    backgroundColor: cellStyle.fillColor,
+
+    textAlign: cellStyle.horizontalAlign,
 
     alignItems:
-      style.verticalAlign === "top"
+      cellStyle.verticalAlign === "top"
         ? "flex-start"
-        : style.verticalAlign === "middle"
+        : cellStyle.verticalAlign === "middle"
           ? "center"
           : "flex-end",
 
-    whiteSpace: style.textWrapping === "wrap" ? "normal" : "nowrap",
+    whiteSpace: cellStyle.textWrapping === "wrap" ? "normal" : "nowrap",
 
-    overflow: style.textWrapping === "clip" ? "hidden" : "visible",
+    overflow: cellStyle.textWrapping === "clip" ? "hidden" : "visible",
 
     transform:
-      style.textRotation === "angledown"
+      cellStyle.textRotation === "angledown"
         ? "rotate(45deg)"
-        : style.textRotation === "angleup"
+        : cellStyle.textRotation === "angleup"
           ? "rotate(-45deg)"
           : undefined,
   };
@@ -64,7 +72,7 @@ export default function Cell({
         },
         className,
       )}
-      style={cellStyle}
+      style={cssStyle}
       onMouseDown={onSelect}
       onDoubleClick={onDoubleClick}
     >

@@ -8,9 +8,9 @@ interface UseSheetScrollParams {
   bodyGridRef: RefObject<Grid | null>;
   rowHeaderRef: RefObject<Grid | null>;
   columnHeaderRef: RefObject<Grid | null>;
-
   horizontalScrollbarRef: RefObject<HTMLDivElement | null>;
   verticalScrollbarRef: RefObject<HTMLDivElement | null>;
+  onViewMove?: () => void;
 }
 
 interface ScrollPosition {
@@ -29,8 +29,20 @@ export function useSheetScroll({
   columnHeaderRef,
   horizontalScrollbarRef,
   verticalScrollbarRef,
+  onViewMove,
 }: UseSheetScrollParams) {
   const scrollPos = useRef<ScrollPosition>({
+    left: 0,
+    top: 0,
+  });
+
+  /**
+   * Vị trí cuối cùng đã được sync.
+   *
+   * Dùng để tránh phát onViewMove
+   * khi vị trí không thực sự thay đổi.
+   */
+  const syncedPositionRef = useRef<ScrollPosition>({
     left: 0,
     top: 0,
   });
@@ -41,13 +53,28 @@ export function useSheetScroll({
   });
 
   const wheelFrameRef = useRef<number | null>(null);
+
   const syncFrameRef = useRef<number | null>(null);
 
   /**
-   * Sync react-window grids with the current native scroll position.
+   * Sync vị trí scroll cho toàn bộ sheet.
    */
   const syncSheetPosition = useCallback(
     (left: number, top: number) => {
+      const previous = syncedPositionRef.current;
+
+      /**
+       * Vị trí không thay đổi.
+       */
+      if (previous.left === left && previous.top === top) {
+        return;
+      }
+
+      syncedPositionRef.current = {
+        left,
+        top,
+      };
+
       bodyGridRef.current?.scrollTo({
         scrollLeft: left,
         scrollTop: top,
@@ -62,15 +89,20 @@ export function useSheetScroll({
         scrollLeft: 0,
         scrollTop: top,
       });
+
+      /**
+       * Chỉ phát event khi viewport
+       * thực sự di chuyển.
+       */
+      onViewMove?.();
     },
-    [bodyGridRef, rowHeaderRef, columnHeaderRef],
+    [bodyGridRef, rowHeaderRef, columnHeaderRef, onViewMove],
   );
 
   /**
-   * Schedule synchronization for native scrollbar events.
+   * Schedule sync bằng requestAnimationFrame.
    *
-   * Used when the user directly interacts with
-   * the native scrollbar.
+   * Gom nhiều scrollbar events vào một frame.
    */
   const scheduleSync = useCallback(() => {
     if (syncFrameRef.current !== null) {
@@ -85,10 +117,7 @@ export function useSheetScroll({
   }, [syncSheetPosition]);
 
   /**
-   * Native horizontal scrollbar.
-   *
-   * This is the source of truth when the user
-   * directly interacts with the scrollbar.
+   * Scroll ngang bằng scrollbar.
    */
   const handleHorizontalScroll = useCallback(
     (event: UIEvent<HTMLDivElement>) => {
@@ -106,10 +135,7 @@ export function useSheetScroll({
   );
 
   /**
-   * Native vertical scrollbar.
-   *
-   * This is the source of truth when the user
-   * directly interacts with the scrollbar.
+   * Scroll dọc bằng scrollbar.
    */
   const handleVerticalScroll = useCallback(
     (event: UIEvent<HTMLDivElement>) => {
@@ -127,17 +153,10 @@ export function useSheetScroll({
   );
 
   /**
-   * Flush wheel movement.
+   * Flush wheel delta.
    *
-   * Important:
-   *
-   * Wheel scrolling uses ONE RAF.
-   *
-   * We calculate the next native scrollbar position
-   * and sync react-window in the same frame.
-   *
-   * We do not wait for the native scrollbar's
-   * scroll event to trigger another RAF.
+   * Nhiều wheel event trong cùng frame
+   * được gom lại.
    */
   const flushWheel = useCallback(() => {
     wheelFrameRef.current = null;
@@ -156,6 +175,7 @@ export function useSheetScroll({
     const verticalScrollbar = verticalScrollbarRef.current;
 
     let nextLeft = scrollPos.current.left;
+
     let nextTop = scrollPos.current.top;
 
     if (x !== 0 && horizontalScrollbar) {
@@ -171,18 +191,19 @@ export function useSheetScroll({
     }
 
     scrollPos.current.left = nextLeft;
+
     scrollPos.current.top = nextTop;
 
     syncSheetPosition(nextLeft, nextTop);
   }, [horizontalScrollbarRef, verticalScrollbarRef, syncSheetPosition]);
 
   /**
-   * Accumulate wheel movement and process it
-   * once per animation frame.
+   * Scroll theo delta.
    */
   const scrollBy = useCallback(
     (deltaX: number, deltaY: number) => {
       pendingDelta.current.x += deltaX;
+
       pendingDelta.current.y += deltaY;
 
       if (wheelFrameRef.current !== null) {
@@ -195,10 +216,7 @@ export function useSheetScroll({
   );
 
   /**
-   * Wheel on the sheet.
-   *
-   * The sheet itself does not scroll.
-   * Instead, it drives the native scrollbar.
+   * Xử lý wheel.
    */
   const handleWheel = useCallback(
     (event: WheelEvent<HTMLDivElement>) => {
@@ -216,12 +234,7 @@ export function useSheetScroll({
   );
 
   /**
-   * Set an absolute scroll position.
-   *
-   * Used for programmatic scrolling such as:
-   * - keyboard navigation
-   * - jumping to a cell
-   * - restoring scroll position
+   * Set vị trí scroll từ bên ngoài.
    */
   const setScrollPosition = useCallback(
     (left: number, top: number) => {
@@ -256,6 +269,7 @@ export function useSheetScroll({
       }
 
       scrollPos.current.left = nextLeft;
+
       scrollPos.current.top = nextTop;
 
       syncSheetPosition(nextLeft, nextTop);
@@ -263,6 +277,9 @@ export function useSheetScroll({
     [horizontalScrollbarRef, verticalScrollbarRef, syncSheetPosition],
   );
 
+  /**
+   * Cleanup animation frames.
+   */
   useEffect(() => {
     return () => {
       if (wheelFrameRef.current !== null) {

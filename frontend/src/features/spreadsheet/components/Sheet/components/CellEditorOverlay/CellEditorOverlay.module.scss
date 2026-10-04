@@ -1,0 +1,56 @@
+.editor-wrapper {
+  position: fixed;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.address {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 3px);
+
+  padding: 6px 7px 4px 7px;
+  border-radius: 1px;
+
+  background: #4c8df6;
+
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.editor {
+  position: relative;
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  pointer-events: auto;
+
+  border: 2px solid #0b57d0;
+  outline: 2px solid #a8c7fa;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.measure {
+  flex: none;
+
+  width: max-content;
+  min-width: 5px;
+
+  box-sizing: border-box;
+
+  > * {
+    width: auto;
+    min-width: 0;
+  }
+}

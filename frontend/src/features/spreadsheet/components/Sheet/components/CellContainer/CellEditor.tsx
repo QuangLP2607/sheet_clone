@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import type { JSONContent } from "@tiptap/core";
+import type { Editor, JSONContent } from "@tiptap/core";
 
 import RichTextEditor from "@/features/spreadsheet/components/RichTextEditor";
 
@@ -12,26 +12,26 @@ import type { CellKey, TextStyle } from "@/features/spreadsheet/types";
 
 interface CellEditorProps {
   cellKey: CellKey;
-
   content: JSONContent;
-
   textStyle: TextStyle;
+
+  /**
+   * Called after Tiptap content changes.
+   *
+   * CellEditorOverlay uses the same Tiptap instance
+   * to determine whether the content needs more columns.
+   */
+  onContentUpdate?: (editor: Editor) => void;
 }
 
 export default function CellEditor({
   cellKey,
   content,
   textStyle,
+  onContentUpdate,
 }: CellEditorProps) {
-  const {
-    setEditor,
-
-    setEditorReady,
-
-    setDraftContent,
-
-    commitEditorContent,
-  } = useEditingEditor();
+  const { setEditor, setEditorReady, setDraftContent, commitEditorContent } =
+    useEditingEditor();
 
   const editor = useRichTextEditor({
     content,
@@ -48,7 +48,7 @@ export default function CellEditor({
   });
 
   /*
-   * Register Cell Editor.
+   * Register current editing editor.
    */
   useEffect(() => {
     if (!editor) {
@@ -59,9 +59,7 @@ export default function CellEditor({
 
     return () => {
       /*
-       * Cell editing kết thúc.
-       *
-       * Commit draft → dataStore.
+       * Draft → dataStore.
        */
       commitEditorContent();
 
@@ -70,9 +68,10 @@ export default function CellEditor({
   }, [editor, cellKey, setEditor, commitEditorContent]);
 
   /*
-   * Cell Editor → draft.
+   * Tiptap → draft.
    *
-   * Không update dataStore.
+   * CellEditorOverlay is notified using the SAME
+   * Tiptap instance. No second editor is created.
    */
   useEffect(() => {
     if (!editor) {
@@ -81,6 +80,8 @@ export default function CellEditor({
 
     const handleUpdate = () => {
       setDraftContent(editor.getJSON());
+
+      onContentUpdate?.(editor);
     };
 
     editor.on("update", handleUpdate);
@@ -88,7 +89,7 @@ export default function CellEditor({
     return () => {
       editor.off("update", handleUpdate);
     };
-  }, [editor, setDraftContent]);
+  }, [editor, setDraftContent, onContentUpdate]);
 
   if (!editor) {
     return null;

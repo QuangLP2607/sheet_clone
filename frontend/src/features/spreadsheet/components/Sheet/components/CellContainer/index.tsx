@@ -9,7 +9,6 @@ import Cell from "@/features/spreadsheet/components/Cell";
 import {
   DEFAULT_CELL_CONTENT,
   DEFAULT_CELL_STYLE,
-  DEFAULT_TEXT_STYLE,
 } from "@/features/spreadsheet/types";
 
 import type { CellKey } from "@/features/spreadsheet/types";
@@ -17,7 +16,6 @@ import type { CellKey } from "@/features/spreadsheet/types";
 import { useDataStore } from "@/features/spreadsheet/stores/dataStore";
 import { useSelectionStore } from "@/features/spreadsheet/stores/selectionStore";
 
-import CellEditor from "./CellEditor";
 import CellValue from "./CellValue";
 
 import { getCellKey } from "../../../../utils/cellAddress";
@@ -51,15 +49,15 @@ function CellContainer({ rowIndex, columnIndex }: CellContainerProps) {
 
   const content = cell?.content ?? DEFAULT_CELL_CONTENT;
 
-  const textStyle = cell?.textStyle ?? DEFAULT_TEXT_STYLE;
-
   const cellStyle = cell?.style ?? DEFAULT_CELL_STYLE;
 
   const handleClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       event.stopPropagation();
 
-      if (editing) return;
+      if (editing) {
+        return;
+      }
 
       selectCell(cellKey);
     },
@@ -70,18 +68,20 @@ function CellContainer({ rowIndex, columnIndex }: CellContainerProps) {
     (event: MouseEvent<HTMLDivElement>) => {
       event.stopPropagation();
 
-      if (editing) return;
+      if (editing) {
+        return;
+      }
 
-      startEditing(cellKey, "cell");
+      const rect = event.currentTarget.getBoundingClientRect();
+
+      startEditing(cellKey, "cell", {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+      });
     },
     [cellKey, editing, startEditing],
-  );
-
-  const handleEditorMouseDown = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
-      event.stopPropagation();
-    },
-    [],
   );
 
   return (
@@ -99,19 +99,9 @@ function CellContainer({ rowIndex, columnIndex }: CellContainerProps) {
         selected={selected}
         editing={editing}
       >
-        {editing ? (
-          <div className={styles.editor} onMouseDown={handleEditorMouseDown}>
-            <CellEditor
-              cellKey={cellKey}
-              content={content}
-              textStyle={textStyle}
-            />
-          </div>
-        ) : (
-          <div className={styles.value}>
-            <CellValue content={content} />
-          </div>
-        )}
+        <div className={styles.value}>
+          <CellValue content={content} />
+        </div>
       </Cell>
     </div>
   );

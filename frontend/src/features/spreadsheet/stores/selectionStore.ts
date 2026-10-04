@@ -6,15 +6,27 @@ import { getCellKey } from "../utils/cellAddress";
 
 export type EditingTarget = "cell" | "formulaBar";
 
+export interface EditingRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 interface SelectionState {
   activeCellKey: CellKey | null;
 
   editingCellKey: CellKey | null;
   editingTarget: EditingTarget | null;
+  editingRect: EditingRect | null;
 
   selectCell: (cellKey: CellKey) => void;
 
-  startEditing: (cellKey: CellKey, target?: EditingTarget) => void;
+  startEditing: (
+    cellKey: CellKey,
+    target?: EditingTarget,
+    editingRect?: EditingRect,
+  ) => void;
 
   moveCell: (
     rowIndex: number,
@@ -34,20 +46,26 @@ export const useSelectionStore = create<SelectionState>((set) => ({
 
   editingCellKey: null,
   editingTarget: null,
+  editingRect: null,
 
   selectCell: (cellKey) => {
     set({
       activeCellKey: cellKey,
+
       editingCellKey: null,
       editingTarget: null,
+      editingRect: null,
     });
   },
 
-  startEditing: (cellKey, target = "cell") => {
+  startEditing: (cellKey, target = "cell", editingRect = undefined) => {
     set({
       activeCellKey: cellKey,
+
       editingCellKey: cellKey,
       editingTarget: target,
+
+      editingRect: target === "cell" ? (editingRect ?? null) : null,
     });
   },
 
@@ -74,6 +92,7 @@ export const useSelectionStore = create<SelectionState>((set) => ({
 
       editingCellKey: null,
       editingTarget: null,
+      editingRect: null,
     });
   },
 
@@ -81,14 +100,17 @@ export const useSelectionStore = create<SelectionState>((set) => ({
     set({
       editingCellKey: null,
       editingTarget: null,
+      editingRect: null,
     });
   },
 
   clearSelection: () => {
     set({
       activeCellKey: null,
+
       editingCellKey: null,
       editingTarget: null,
+      editingRect: null,
     });
   },
 }));
